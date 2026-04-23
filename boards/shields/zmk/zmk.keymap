@@ -4,6 +4,11 @@
 #include <dt-bindings/zmk/outputs.h>
 
 / {
+    /* This forces the Bluetooth name to be unique */
+    chosen {
+        zmk,keyboard-name = "FIND-ME";
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
