@@ -7,12 +7,13 @@
         q_green: q_green {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            wait-ms = <3000>;
+            wait-ms = <0>;
             tap-ms = <0>;
             bindings
                 = <&macro_tap &kp Q>
                 , <&macro_tap &rgb_ug RGB_ON>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(120,100,100)>
+                , <&macro_wait_time 3000>
                 , <&macro_tap &rgb_ug RGB_OFF>
                 ;
         };
@@ -20,12 +21,13 @@
         w_red: w_red {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            wait-ms = <3000>;
+            wait-ms = <0>;
             tap-ms = <0>;
             bindings
                 = <&macro_tap &kp W>
                 , <&macro_tap &rgb_ug RGB_ON>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(0,100,100)>
+                , <&macro_wait_time 3000>
                 , <&macro_tap &rgb_ug RGB_OFF>
                 ;
         };
@@ -33,12 +35,13 @@
         a_blue: a_blue {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            wait-ms = <3000>;
+            wait-ms = <0>;
             tap-ms = <0>;
             bindings
                 = <&macro_tap &kp A>
                 , <&macro_tap &rgb_ug RGB_ON>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(240,100,100)>
+                , <&macro_wait_time 3000>
                 , <&macro_tap &rgb_ug RGB_OFF>
                 ;
         };
@@ -46,12 +49,13 @@
         b_yellow: b_yellow {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            wait-ms = <3000>;
+            wait-ms = <0>;
             tap-ms = <0>;
             bindings
                 = <&macro_tap &kp B>
                 , <&macro_tap &rgb_ug RGB_ON>
                 , <&macro_tap &rgb_ug RGB_COLOR_HSB(60,100,100)>
+                , <&macro_wait_time 3000>
                 , <&macro_tap &rgb_ug RGB_OFF>
                 ;
         };
