@@ -1,0 +1,6 @@
+if SHIELD_FORCE_BLE
+
+config ZMK_KEYBOARD_NAME
+    default "FORCE-BLE"
+
+endif
