@@ -4,3 +4,23 @@ config ZMK_KEYBOARD_NAME
     default "FORCE-BLE"
 
 endif
+
+if SHIELD_FORCE_BLE_LEFT
+
+config ZMK_KEYBOARD_NAME
+    default "FORCE-BLE"
+
+config ZMK_SPLIT_ROLE_CENTRAL
+    default y
+
+endif
+
+if SHIELD_FORCE_BLE_LEFT || SHIELD_FORCE_BLE_RIGHT
+
+config ZMK_SPLIT
+    default y
+
+config ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
+    default 1
+
+endif
