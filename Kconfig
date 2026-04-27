@@ -1,0 +1,8 @@
+menu "Custom ZMK Extensions"
+
+config ZMK_BEHAVIOR_UART_PING
+    bool "Enable UART ping behavior"
+    default y
+    depends on SERIAL
+
+endmenu

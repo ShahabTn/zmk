@@ -1,0 +1,5 @@
+description: UART ping behavior
+
+compatible: "zmk,behavior-uart-ping"
+
+include: zero_param.yaml

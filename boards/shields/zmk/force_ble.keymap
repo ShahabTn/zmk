@@ -2,12 +2,32 @@
 #include <dt-bindings/zmk/keys.h>
 
 / {
+    behaviors {
+        uart_ping: uart_ping {
+            compatible = "zmk,behavior-uart-ping";
+            #binding-cells = <0>;
+        };
+    };
+
+    macros {
+        q_ping: q_ping {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <0>;
+            tap-ms = <0>;
+            bindings
+                = <&uart_ping>
+                , <&kp Q>
+                ;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
         default_layer {
             bindings = <
-                &kp Q   &kp W
+                &q_ping &kp W
                 &kp A   &kp B
             >;
         };
