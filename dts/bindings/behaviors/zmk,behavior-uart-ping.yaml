@@ -6,4 +6,5 @@ include: behavior-metadata.yaml
 
 properties:
   "#binding-cells":
+    type: int
     const: 0
