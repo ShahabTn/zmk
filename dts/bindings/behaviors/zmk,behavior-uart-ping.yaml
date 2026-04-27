@@ -2,4 +2,8 @@ description: UART ping behavior
 
 compatible: "zmk,behavior-uart-ping"
 
-include: zero_param.yaml
+include: behavior-metadata.yaml
+
+properties:
+  "#binding-cells":
+    const: 0
