@@ -1,0 +1,3 @@
+if(CONFIG_ZMK_ESP_UART_BRIDGE AND CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+    target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/esp_uart_bridge.c)
+endif()

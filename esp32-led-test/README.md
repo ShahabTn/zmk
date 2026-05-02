@@ -5,8 +5,10 @@ Temporary firmware for testing a 10 LED strip from the ESP32-S3 before the PCB a
 ## Wiring
 
 - LED DIN: ESP32-S3 GPIO41
+- nRF P1.04 TX: ESP32-S3 GPIO45 RX
+- nRF P1.06 RX: ESP32-S3 GPIO0 TX
 - LED power and ground must match the strip requirements
-- ESP32 ground and LED power ground must be common
+- nRF, ESP32, and LED power grounds must be common
 
 ## Temporary LED Allocation
 

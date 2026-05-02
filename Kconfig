@@ -1,0 +1,8 @@
+menu "ZMK ESP Bridge"
+
+config ZMK_ESP_UART_BRIDGE
+    bool "Send key position events to ESP32 over UART"
+    default y
+    depends on SERIAL
+
+endmenu
