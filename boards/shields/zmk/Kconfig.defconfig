@@ -1,14 +1,14 @@
 if SHIELD_FORCE_BLE
 
 config ZMK_KEYBOARD_NAME
-    default "FORCE-BLE"
+    default "ZMK-BLE"
 
 endif
 
 if SHIELD_FORCE_BLE_LEFT
 
 config ZMK_KEYBOARD_NAME
-    default "FORCE-BLE"
+    default "ZMK-BLE"
 
 config ZMK_SPLIT_ROLE_CENTRAL
     default y
