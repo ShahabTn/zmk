@@ -6,8 +6,8 @@ namespace {
 constexpr uint8_t LED_PIN = 41;
 constexpr uint8_t LED_COUNT = 10;
 constexpr uint8_t BRIGHTNESS = 48;
-constexpr uint8_t UART_RX_PIN = 45;
-constexpr uint8_t UART_TX_PIN = 0;
+constexpr uint8_t UART_RX_PIN = 0;
+constexpr uint8_t UART_TX_PIN = 45;
 constexpr uint32_t UART_BAUD = 115200;
 
 constexpr uint8_t BATTERY_LED = 0;
@@ -58,6 +58,9 @@ void handle_uart_line(const String &line) {
     unsigned int position = 0;
     unsigned int pressed = 0;
 
+    Serial.print("nRF UART: ");
+    Serial.println(line);
+
     if (sscanf(line.c_str(), "K %u %u", &position, &pressed) == 2) {
         handle_key_event(position, pressed != 0);
         Serial.printf("nRF key position %u %s\n", position, pressed ? "pressed" : "released");
@@ -93,7 +96,7 @@ void setup() {
     Serial.println("LEDs 1-5: temporary per-key RGB");
     Serial.println("LEDs 6-7: indicators");
     Serial.println("LEDs 8-9: underglow");
-    Serial.println("UART from nRF: RX GPIO45, TX GPIO0, 115200 baud");
+    Serial.println("UART from nRF: RX GPIO0, TX GPIO45, 115200 baud");
 }
 
 void loop() {
