@@ -10,6 +10,9 @@ constexpr uint8_t BRIGHTNESS = 10;
 constexpr uint8_t UART_RX_PIN = 10;
 constexpr uint8_t UART_TX_PIN = 11;
 constexpr uint32_t UART_BAUD = 115200;
+constexpr uint8_t BUZZER_PIN = 14;
+constexpr uint16_t BUZZER_FREQUENCY_HZ = 2400;
+constexpr uint16_t BUZZER_DURATION_MS = 25;
 
 constexpr uint8_t BATTERY_LED = 0;
 constexpr uint8_t PER_KEY_START = 1;
@@ -47,6 +50,7 @@ void handle_key_event(uint8_t position, bool pressed) {
     if (pressed) {
         leds[led] = CRGB::White;
         keyLedReleaseAt[position % PER_KEY_COUNT] = millis() + 180;
+        tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
     } else {
         leds[led] = CRGB::Blue;
         keyLedReleaseAt[position % PER_KEY_COUNT] = 0;
@@ -86,6 +90,7 @@ void poll_nrf_uart() {
 void setup() {
     Serial.begin(115200);
     NrfSerial.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+    pinMode(BUZZER_PIN, OUTPUT);
     delay(500);
 
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
@@ -98,6 +103,7 @@ void setup() {
     Serial.println("LEDs 6-7: indicators");
     Serial.println("LEDs 8-9: underglow");
     Serial.println("UART from nRF: RX GPIO10, TX GPIO11, 115200 baud");
+    Serial.println("Buzzer: GPIO14");
 }
 
 void loop() {
