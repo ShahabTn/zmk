@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include <Wire.h>
 
 namespace {
 
@@ -13,6 +14,15 @@ constexpr uint32_t UART_BAUD = 115200;
 constexpr uint8_t BUZZER_PIN = 14;
 constexpr uint16_t BUZZER_FREQUENCY_HZ = 2400;
 constexpr uint16_t BUZZER_DURATION_MS = 25;
+constexpr uint8_t I2C_SDA_PIN = 42;
+constexpr uint8_t I2C_SCL_PIN = 2;
+constexpr uint32_t I2C_CLOCK_HZ = 400000;
+constexpr uint8_t DRV2605L_TRIGGER_PIN = 41;
+
+constexpr uint8_t INA219_ADDR = 0x40;
+constexpr uint8_t DRV2605L_ADDR = 0x5A;
+constexpr uint8_t ATECC608A_ADDR = 0x60;
+constexpr uint8_t BH1750_ADDR = 0x23;
 
 constexpr uint8_t BATTERY_LED = 0;
 constexpr uint8_t PER_KEY_START = 1;
@@ -42,6 +52,25 @@ void render_test_pattern() {
     fill_segment(UNDERGLOW_START, UNDERGLOW_COUNT, CRGB::Purple);
 
     FastLED.show();
+}
+
+bool i2c_device_present(uint8_t address) {
+    Wire.beginTransmission(address);
+    return Wire.endTransmission() == 0;
+}
+
+void print_i2c_device_status(const char *name, uint8_t address) {
+    Serial.printf("%s 0x%02X: %s\n", name, address,
+                  i2c_device_present(address) ? "found" : "not found");
+}
+
+void print_i2c_status() {
+    Serial.printf("I2C: SDA GPIO%u, SCL GPIO%u, %lu Hz\n", I2C_SDA_PIN, I2C_SCL_PIN,
+                  static_cast<unsigned long>(I2C_CLOCK_HZ));
+    print_i2c_device_status("INA219", INA219_ADDR);
+    print_i2c_device_status("DRV2605L", DRV2605L_ADDR);
+    print_i2c_device_status("ATECC608A", ATECC608A_ADDR);
+    print_i2c_device_status("BH1750", BH1750_ADDR);
 }
 
 void handle_key_event(uint8_t position, bool pressed) {
@@ -91,7 +120,12 @@ void setup() {
     Serial.begin(115200);
     NrfSerial.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
     pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(DRV2605L_TRIGGER_PIN, OUTPUT);
+    digitalWrite(DRV2605L_TRIGGER_PIN, LOW);
     delay(500);
+
+    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+    Wire.setClock(I2C_CLOCK_HZ);
 
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
     FastLED.setBrightness(BRIGHTNESS);
@@ -104,6 +138,8 @@ void setup() {
     Serial.println("LEDs 8-9: underglow");
     Serial.println("UART from nRF: RX GPIO10, TX GPIO11, 115200 baud");
     Serial.println("Buzzer: GPIO14");
+    Serial.println("DRV2605L IN/TRIG: GPIO41");
+    print_i2c_status();
 }
 
 void loop() {
