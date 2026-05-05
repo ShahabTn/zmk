@@ -5,7 +5,8 @@ namespace {
 
 constexpr uint8_t LED_PIN = 41;
 constexpr uint8_t LED_COUNT = 10;
-constexpr uint8_t BRIGHTNESS = 48;
+// Auto-sync test
+constexpr uint8_t BRIGHTNESS = 10;
 constexpr uint8_t UART_RX_PIN = 0;
 constexpr uint8_t UART_TX_PIN = 45;
 constexpr uint32_t UART_BAUD = 115200;
