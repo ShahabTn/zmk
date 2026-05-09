@@ -78,6 +78,80 @@ void render_test_pattern() {
     FastLED.show();
 }
 
+CRGB color_from_hex(const char *hex, const CRGB &fallback) {
+    if (hex == nullptr || hex[0] != '#' || strlen(hex) != 7) {
+        return fallback;
+    }
+
+    char channel[3] = {0};
+    channel[0] = hex[1];
+    channel[1] = hex[2];
+    uint8_t red = strtoul(channel, nullptr, 16);
+    channel[0] = hex[3];
+    channel[1] = hex[4];
+    uint8_t green = strtoul(channel, nullptr, 16);
+    channel[0] = hex[5];
+    channel[1] = hex[6];
+    uint8_t blue = strtoul(channel, nullptr, 16);
+
+    return CRGB(red, green, blue);
+}
+
+CRGB color_for_key(uint8_t position) {
+    JsonDocument doc;
+
+    if (deserializeJson(doc, configJson)) {
+        return CRGB::White;
+    }
+
+    JsonArray keys = doc["keys"].as<JsonArray>();
+
+    for (JsonVariant key : keys) {
+        if ((key["id"] | 255) == position) {
+            return color_from_hex(key["color"] | "#ffffff", CRGB::White);
+        }
+    }
+
+    return CRGB::White;
+}
+
+const char *remap_name_for_key(JsonVariant key) {
+    const char *tap1 = key["tap1"] | "";
+
+    if (strcmp(tap1, "KC_A") == 0 || strcmp(tap1, "KC_B") == 0 || strcmp(tap1, "KC_C") == 0) {
+        return tap1;
+    }
+
+    return "NONE";
+}
+
+void send_nrf_line(const String &line) {
+    NrfSerial.print(line);
+}
+
+void sync_remaps_to_nrf() {
+    JsonDocument doc;
+
+    if (deserializeJson(doc, configJson)) {
+        Serial.println("Cannot sync remaps: invalid config JSON");
+        return;
+    }
+
+    JsonArray keys = doc["keys"].as<JsonArray>();
+
+    for (JsonVariant key : keys) {
+        uint8_t position = key["id"] | 255;
+
+        if (position >= 28) {
+            continue;
+        }
+
+        send_nrf_line("M " + String(position) + " " + remap_name_for_key(key) + "\n");
+    }
+
+    Serial.println("Synced simple KC_A/KC_B/KC_C remaps to nRF");
+}
+
 bool i2c_device_present(TwoWire &bus, uint8_t address) {
     bus.beginTransmission(address);
     return bus.endTransmission() == 0;
@@ -109,6 +183,7 @@ void load_config() {
 void save_config(const String &json) {
     configJson = json;
     preferences.putString("config", configJson);
+    sync_remaps_to_nrf();
 }
 
 void send_config(uint8_t client) {
@@ -263,7 +338,7 @@ void handle_key_event(uint8_t position, bool pressed) {
     uint8_t led = PER_KEY_START + (position % PER_KEY_COUNT);
 
     if (pressed) {
-        leds[led] = CRGB::White;
+        leds[led] = color_for_key(position);
         keyLedReleaseAt[position % PER_KEY_COUNT] = millis() + 180;
         tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
     } else {
@@ -332,6 +407,7 @@ void setup() {
 
     start_network();
     start_web_gui();
+    sync_remaps_to_nrf();
 }
 
 void loop() {
