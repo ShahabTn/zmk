@@ -4,20 +4,22 @@
 
 namespace {
 
-constexpr uint8_t LED_PIN = 39;
+constexpr uint8_t LED_PIN = 21;
 constexpr uint8_t LED_COUNT = 10;
 // Auto-sync test
 constexpr uint8_t BRIGHTNESS = 10;
-constexpr uint8_t UART_RX_PIN = 10;
-constexpr uint8_t UART_TX_PIN = 11;
+constexpr uint8_t UART_RX_PIN = 13;
+constexpr uint8_t UART_TX_PIN = 12;
 constexpr uint32_t UART_BAUD = 115200;
-constexpr uint8_t BUZZER_PIN = 14;
+constexpr uint8_t BUZZER_PIN = 4;
 constexpr uint16_t BUZZER_FREQUENCY_HZ = 2400;
 constexpr uint16_t BUZZER_DURATION_MS = 25;
-constexpr uint8_t I2C_SDA_PIN = 42;
-constexpr uint8_t I2C_SCL_PIN = 2;
+constexpr uint8_t INA219_I2C_SDA_PIN = 10;
+constexpr uint8_t INA219_I2C_SCL_PIN = 9;
+constexpr uint8_t SHARED_I2C_SDA_PIN = 38;
+constexpr uint8_t SHARED_I2C_SCL_PIN = 39;
 constexpr uint32_t I2C_CLOCK_HZ = 400000;
-constexpr uint8_t DRV2605L_TRIGGER_PIN = 41;
+constexpr uint8_t DRV2605L_TRIGGER_PIN = 47;
 
 constexpr uint8_t INA219_ADDR = 0x40;
 constexpr uint8_t DRV2605L_ADDR = 0x5A;
@@ -34,6 +36,8 @@ constexpr uint8_t UNDERGLOW_COUNT = 2;
 
 CRGB leds[LED_COUNT];
 HardwareSerial NrfSerial(1);
+TwoWire Ina219Wire = TwoWire(0);
+TwoWire SharedWire = TwoWire(1);
 String rxLine;
 uint32_t keyLedReleaseAt[PER_KEY_COUNT];
 
@@ -54,23 +58,27 @@ void render_test_pattern() {
     FastLED.show();
 }
 
-bool i2c_device_present(uint8_t address) {
-    Wire.beginTransmission(address);
-    return Wire.endTransmission() == 0;
+bool i2c_device_present(TwoWire &bus, uint8_t address) {
+    bus.beginTransmission(address);
+    return bus.endTransmission() == 0;
 }
 
-void print_i2c_device_status(const char *name, uint8_t address) {
+void print_i2c_device_status(TwoWire &bus, const char *name, uint8_t address) {
     Serial.printf("%s 0x%02X: %s\n", name, address,
-                  i2c_device_present(address) ? "found" : "not found");
+                  i2c_device_present(bus, address) ? "found" : "not found");
 }
 
 void print_i2c_status() {
-    Serial.printf("I2C: SDA GPIO%u, SCL GPIO%u, %lu Hz\n", I2C_SDA_PIN, I2C_SCL_PIN,
+    Serial.printf("INA219 I2C: SDA GPIO%u, SCL GPIO%u, %lu Hz\n", INA219_I2C_SDA_PIN,
+                  INA219_I2C_SCL_PIN, static_cast<unsigned long>(I2C_CLOCK_HZ));
+    print_i2c_device_status(Ina219Wire, "INA219", INA219_ADDR);
+
+    Serial.printf("Shared I2C: SDA GPIO%u, SCL GPIO%u, %lu Hz\n", SHARED_I2C_SDA_PIN,
+                  SHARED_I2C_SCL_PIN,
                   static_cast<unsigned long>(I2C_CLOCK_HZ));
-    print_i2c_device_status("INA219", INA219_ADDR);
-    print_i2c_device_status("DRV2605L", DRV2605L_ADDR);
-    print_i2c_device_status("ATECC608A", ATECC608A_ADDR);
-    print_i2c_device_status("BH1750", BH1750_ADDR);
+    print_i2c_device_status(SharedWire, "DRV2605L", DRV2605L_ADDR);
+    print_i2c_device_status(SharedWire, "ATECC608A", ATECC608A_ADDR);
+    print_i2c_device_status(SharedWire, "BH1750", BH1750_ADDR);
 }
 
 void handle_key_event(uint8_t position, bool pressed) {
@@ -124,8 +132,10 @@ void setup() {
     digitalWrite(DRV2605L_TRIGGER_PIN, LOW);
     delay(500);
 
-    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-    Wire.setClock(I2C_CLOCK_HZ);
+    Ina219Wire.begin(INA219_I2C_SDA_PIN, INA219_I2C_SCL_PIN);
+    Ina219Wire.setClock(I2C_CLOCK_HZ);
+    SharedWire.begin(SHARED_I2C_SDA_PIN, SHARED_I2C_SCL_PIN);
+    SharedWire.setClock(I2C_CLOCK_HZ);
 
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
     FastLED.setBrightness(BRIGHTNESS);
@@ -136,9 +146,9 @@ void setup() {
     Serial.println("LEDs 1-5: temporary per-key RGB");
     Serial.println("LEDs 6-7: indicators");
     Serial.println("LEDs 8-9: underglow");
-    Serial.println("UART from nRF: RX GPIO10, TX GPIO11, 115200 baud");
-    Serial.println("Buzzer: GPIO14");
-    Serial.println("DRV2605L IN/TRIG: GPIO41");
+    Serial.println("UART from nRF: RX GPIO13, TX GPIO12, 115200 baud");
+    Serial.println("Buzzer: GPIO4");
+    Serial.println("DRV2605L IN/TRIG: GPIO47");
     print_i2c_status();
 }
 

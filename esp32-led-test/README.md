@@ -4,13 +4,15 @@ Temporary firmware for testing a 10 LED strip from the ESP32-S3 before the PCB a
 
 ## Wiring
 
-- LED DIN: ESP32-S3 GPIO39
-- nRF P1.15 TX: ESP32-S3 GPIO10 RX
-- nRF P0.02 RX: ESP32-S3 GPIO11 TX
-- Shared I2C SDA: ESP32-S3 GPIO42
-- Shared I2C SCL: ESP32-S3 GPIO2
-- DRV2605L IN/TRIG: ESP32-S3 GPIO41
-- Buzzer: ESP32-S3 GPIO14
+- LED DIN: ESP32-S3 GPIO21
+- nRF P0.02 TX: ESP32-S3 GPIO13 RX
+- nRF P1.15 RX: ESP32-S3 GPIO12 TX
+- INA219 I2C SDA: ESP32-S3 GPIO10
+- INA219 I2C SCL: ESP32-S3 GPIO9
+- Shared I2C SDA: ESP32-S3 GPIO38
+- Shared I2C SCL: ESP32-S3 GPIO39
+- DRV2605L IN/TRIG: ESP32-S3 GPIO47
+- Buzzer: ESP32-S3 GPIO4
 - LED power and ground must match the strip requirements
 - nRF, ESP32, and LED power grounds must be common
 
