@@ -36,6 +36,18 @@ This folder is a PlatformIO Arduino project:
 
 ```sh
 pio run
+pio run --target uploadfs
 pio run --target upload
 pio device monitor
 ```
+
+## Web GUI
+
+The GUI is stored in `data/index.html` and served by the ESP32 from LittleFS.
+
+- If Wi-Fi credentials are empty in `src/main.cpp`, the ESP32 starts an access point:
+  - SSID: `ZMK-BLE-Macropad`
+  - Password: `12345678`
+- Open `http://macropad.local` when mDNS resolves.
+- Fallback AP address is printed in the serial monitor.
+- WebSocket runs on port `81`.

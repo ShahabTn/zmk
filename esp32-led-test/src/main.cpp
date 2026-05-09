@@ -1,5 +1,12 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <FastLED.h>
+#include <LittleFS.h>
+#include <Preferences.h>
+#include <WebServer.h>
+#include <WebSocketsServer.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <Wire.h>
 
 namespace {
@@ -25,6 +32,15 @@ constexpr uint8_t INA219_ADDR = 0x40;
 constexpr uint8_t DRV2605L_ADDR = 0x5A;
 constexpr uint8_t ATECC608A_ADDR = 0x60;
 constexpr uint8_t BH1750_ADDR = 0x23;
+constexpr char MDNS_NAME[] = "macropad";
+constexpr char WIFI_SSID[] = "";
+constexpr char WIFI_PASSWORD[] = "";
+constexpr char AP_SSID[] = "ZMK-BLE-Macropad";
+constexpr char AP_PASSWORD[] = "12345678";
+constexpr char DEFAULT_CONFIG[] =
+    "{\"version\":1,\"layer\":\"trading\",\"keys\":[{\"id\":0,\"label\":\"BUY\","
+    "\"type\":\"broker_api\",\"color\":\"#ef9f27\",\"tap1\":\"BUY 0.01 XAUUSD\","
+    "\"tap2\":\"BUY 0.05 XAUUSD\",\"tap3\":\"\",\"hold\":\"\",\"params\":\"{\\\"symbol\\\":\\\"XAUUSD\\\"}\"}]}";
 
 constexpr uint8_t BATTERY_LED = 0;
 constexpr uint8_t PER_KEY_START = 1;
@@ -38,7 +54,11 @@ CRGB leds[LED_COUNT];
 HardwareSerial NrfSerial(1);
 TwoWire Ina219Wire = TwoWire(0);
 TwoWire SharedWire = TwoWire(1);
+WebServer server(80);
+WebSocketsServer webSocket(81);
+Preferences preferences;
 String rxLine;
+String configJson;
 uint32_t keyLedReleaseAt[PER_KEY_COUNT];
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
@@ -79,6 +99,116 @@ void print_i2c_status() {
     print_i2c_device_status(SharedWire, "DRV2605L", DRV2605L_ADDR);
     print_i2c_device_status(SharedWire, "ATECC608A", ATECC608A_ADDR);
     print_i2c_device_status(SharedWire, "BH1750", BH1750_ADDR);
+}
+
+void load_config() {
+    preferences.begin("macropad", false);
+    configJson = preferences.getString("config", DEFAULT_CONFIG);
+}
+
+void save_config(const String &json) {
+    configJson = json;
+    preferences.putString("config", configJson);
+}
+
+void send_config(uint8_t client) {
+    webSocket.sendTXT(client, "{\"type\":\"config\",\"config\":" + configJson + "}");
+}
+
+void send_ok(uint8_t client, const char *message) {
+    JsonDocument doc;
+    doc["type"] = "ok";
+    doc["message"] = message;
+    String out;
+    serializeJson(doc, out);
+    webSocket.sendTXT(client, out);
+}
+
+void handle_websocket_message(uint8_t client, const String &payload) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, payload);
+
+    if (error) {
+        webSocket.sendTXT(client, "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return;
+    }
+
+    const char *type = doc["type"] | "";
+
+    if (strcmp(type, "get_config") == 0) {
+        send_config(client);
+        return;
+    }
+
+    if (strcmp(type, "set_config") == 0) {
+        String nextConfig;
+        serializeJson(doc["config"], nextConfig);
+        save_config(nextConfig);
+        send_ok(client, "config saved");
+        Serial.println("GUI config saved");
+        return;
+    }
+
+    webSocket.sendTXT(client, "{\"type\":\"error\",\"message\":\"unknown command\"}");
+}
+
+void on_websocket_event(uint8_t client, WStype_t type, uint8_t *payload, size_t length) {
+    switch (type) {
+    case WStype_CONNECTED:
+        send_config(client);
+        break;
+    case WStype_TEXT:
+        handle_websocket_message(client, String(reinterpret_cast<char *>(payload), length));
+        break;
+    default:
+        break;
+    }
+}
+
+void start_network() {
+    if (strlen(WIFI_SSID) > 0) {
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+        Serial.printf("Connecting to Wi-Fi SSID %s", WIFI_SSID);
+        for (uint8_t i = 0; i < 30 && WiFi.status() != WL_CONNECTED; i++) {
+            delay(250);
+            Serial.print(".");
+        }
+        Serial.println();
+    }
+
+    if (WiFi.status() != WL_CONNECTED) {
+        WiFi.mode(WIFI_AP);
+        WiFi.softAP(AP_SSID, AP_PASSWORD);
+        Serial.printf("Wi-Fi AP started: %s / %s\n", AP_SSID, AP_PASSWORD);
+        Serial.printf("AP IP: %s\n", WiFi.softAPIP().toString().c_str());
+    } else {
+        Serial.printf("Wi-Fi connected: %s\n", WiFi.localIP().toString().c_str());
+    }
+
+    if (MDNS.begin(MDNS_NAME)) {
+        MDNS.addService("http", "tcp", 80);
+        MDNS.addService("ws", "tcp", 81);
+        Serial.printf("mDNS: http://%s.local\n", MDNS_NAME);
+    }
+}
+
+void start_web_gui() {
+    if (!LittleFS.begin(true)) {
+        Serial.println("LittleFS mount failed");
+        return;
+    }
+
+    server.serveStatic("/", LittleFS, "/index.html");
+    server.onNotFound([]() {
+        server.send(404, "text/plain", "not found");
+    });
+    server.begin();
+
+    webSocket.begin();
+    webSocket.onEvent(on_websocket_event);
+    Serial.println("HTTP server on port 80, WebSocket on port 81");
 }
 
 void handle_key_event(uint8_t position, bool pressed) {
@@ -127,6 +257,7 @@ void poll_nrf_uart() {
 void setup() {
     Serial.begin(115200);
     NrfSerial.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+    load_config();
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(DRV2605L_TRIGGER_PIN, OUTPUT);
     digitalWrite(DRV2605L_TRIGGER_PIN, LOW);
@@ -150,12 +281,17 @@ void setup() {
     Serial.println("Buzzer: GPIO4");
     Serial.println("DRV2605L IN/TRIG: GPIO47");
     print_i2c_status();
+
+    start_network();
+    start_web_gui();
 }
 
 void loop() {
     static uint8_t hue = 0;
 
     poll_nrf_uart();
+    server.handleClient();
+    webSocket.loop();
 
     leds[BATTERY_LED] = CHSV(96, 255, BRIGHTNESS);
 
