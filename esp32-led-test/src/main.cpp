@@ -115,6 +115,39 @@ void send_config(uint8_t client) {
     webSocket.sendTXT(client, "{\"type\":\"config\",\"config\":" + configJson + "}");
 }
 
+void send_http_config() {
+    server.send(200, "application/json", "{\"type\":\"config\",\"config\":" + configJson + "}");
+}
+
+void save_http_config() {
+    String body = server.arg("plain");
+
+    if (body.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"empty body\"}");
+        return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return;
+    }
+
+    String nextConfig;
+
+    if (doc["type"] == "set_config") {
+        serializeJson(doc["config"], nextConfig);
+    } else {
+        serializeJson(doc, nextConfig);
+    }
+
+    save_config(nextConfig);
+    server.send(200, "application/json", "{\"type\":\"ok\",\"message\":\"config saved\"}");
+    Serial.println("GUI config saved over HTTP");
+}
+
 void send_ok(uint8_t client, const char *message) {
     JsonDocument doc;
     doc["type"] = "ok";
@@ -200,8 +233,23 @@ void start_web_gui() {
         return;
     }
 
-    server.serveStatic("/", LittleFS, "/index.html");
+    server.on("/", HTTP_GET, []() {
+        File file = LittleFS.open("/index.html", "r");
+        server.streamFile(file, "text/html");
+        file.close();
+    });
+    server.on("/index.html", HTTP_GET, []() {
+        File file = LittleFS.open("/index.html", "r");
+        server.streamFile(file, "text/html");
+        file.close();
+    });
+    server.on("/favicon.ico", HTTP_GET, []() {
+        server.send(204);
+    });
+    server.on("/api/config", HTTP_GET, send_http_config);
+    server.on("/api/config", HTTP_POST, save_http_config);
     server.onNotFound([]() {
+        Serial.printf("HTTP route not found: %s\n", server.uri().c_str());
         server.send(404, "text/plain", "not found");
     });
     server.begin();
