@@ -60,6 +60,7 @@ Preferences preferences;
 String rxLine;
 String configJson;
 uint32_t keyLedReleaseAt[PER_KEY_COUNT];
+uint8_t lastRemapSyncCount;
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
     for (uint8_t i = 0; i < count; i++) {
@@ -131,12 +132,14 @@ void send_nrf_line(const String &line) {
     Serial.print(line);
 }
 
-void sync_remaps_to_nrf() {
+uint8_t sync_remaps_to_nrf() {
     JsonDocument doc;
+    uint8_t sent = 0;
 
     if (deserializeJson(doc, configJson)) {
         Serial.println("Cannot sync remaps: invalid config JSON");
-        return;
+        lastRemapSyncCount = 0;
+        return 0;
     }
 
     JsonArray keys = doc["keys"].as<JsonArray>();
@@ -149,9 +152,12 @@ void sync_remaps_to_nrf() {
         }
 
         send_nrf_line("M " + String(position) + " " + remap_name_for_key(key) + "\n");
+        sent++;
     }
 
-    Serial.println("Synced simple KC_A/KC_B/KC_C remaps to nRF");
+    lastRemapSyncCount = sent;
+    Serial.printf("Synced %u simple KC_A/KC_B/KC_C remaps to nRF\n", sent);
+    return sent;
 }
 
 bool i2c_device_present(TwoWire &bus, uint8_t address) {
@@ -182,10 +188,10 @@ void load_config() {
     configJson = preferences.getString("config", DEFAULT_CONFIG);
 }
 
-void save_config(const String &json) {
+uint8_t save_config(const String &json) {
     configJson = json;
     preferences.putString("config", configJson);
-    sync_remaps_to_nrf();
+    return sync_remaps_to_nrf();
 }
 
 void send_config(uint8_t client) {
@@ -220,8 +226,10 @@ void save_http_config() {
         serializeJson(doc, nextConfig);
     }
 
-    save_config(nextConfig);
-    server.send(200, "application/json", "{\"type\":\"ok\",\"message\":\"config saved\"}");
+    uint8_t sent = save_config(nextConfig);
+    server.send(200, "application/json",
+                "{\"type\":\"ok\",\"message\":\"config saved; remaps sent: " + String(sent) +
+                    "\"}");
     Serial.println("GUI config saved over HTTP");
 }
 
@@ -253,8 +261,9 @@ void handle_websocket_message(uint8_t client, const String &payload) {
     if (strcmp(type, "set_config") == 0) {
         String nextConfig;
         serializeJson(doc["config"], nextConfig);
-        save_config(nextConfig);
-        send_ok(client, "config saved");
+        uint8_t sent = save_config(nextConfig);
+        String message = "config saved; remaps sent: " + String(sent);
+        send_ok(client, message.c_str());
         Serial.println("GUI config saved");
         return;
     }
@@ -341,7 +350,7 @@ void handle_key_event(uint8_t position, bool pressed) {
 
     if (pressed) {
         leds[led] = color_for_key(position);
-        keyLedReleaseAt[position % PER_KEY_COUNT] = millis() + 180;
+        keyLedReleaseAt[position % PER_KEY_COUNT] = millis() + 800;
         tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
     } else {
         leds[led] = CRGB::Blue;
