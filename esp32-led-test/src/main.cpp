@@ -61,6 +61,8 @@ String rxLine;
 String configJson;
 uint32_t keyLedReleaseAt[PER_KEY_COUNT];
 uint8_t lastRemapSyncCount;
+uint8_t remapAckCount;
+uint32_t remapAckDeadline;
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
     for (uint8_t i = 0; i < count; i++) {
@@ -156,6 +158,10 @@ uint8_t sync_remaps_to_nrf() {
     }
 
     JsonArray keys = doc["keys"].as<JsonArray>();
+    remapAckCount = 0;
+    remapAckDeadline = millis() + 1500;
+    fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Yellow);
+    FastLED.show();
 
     for (JsonVariant key : keys) {
         uint8_t position = key["id"] | 255;
@@ -385,6 +391,11 @@ void handle_uart_line(const String &line) {
     if (sscanf(line.c_str(), "K %u %u", &position, &pressed) == 2) {
         handle_key_event(position, pressed != 0);
         Serial.printf("nRF key position %u %s\n", position, pressed ? "pressed" : "released");
+    } else if (line.startsWith("ACK M ")) {
+        remapAckCount++;
+        fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Green);
+        FastLED.show();
+        Serial.printf("nRF remap ACK count: %u\n", remapAckCount);
     }
 }
 
@@ -443,6 +454,15 @@ void loop() {
     server.handleClient();
     webSocket.loop();
 
+    if (remapAckDeadline != 0 && millis() > remapAckDeadline) {
+        if (remapAckCount == 0) {
+            fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Red);
+            FastLED.show();
+            Serial.println("No nRF remap ACK received");
+        }
+        remapAckDeadline = 0;
+    }
+
     leds[BATTERY_LED] = CHSV(96, 255, BRIGHTNESS);
 
     for (uint8_t i = 0; i < PER_KEY_COUNT; i++) {
@@ -454,8 +474,10 @@ void loop() {
         leds[PER_KEY_START + i] = CHSV(hue + (i * 24), 255, BRIGHTNESS);
     }
 
-    leds[INDICATOR_START] = CRGB::Red;
-    leds[INDICATOR_START + 1] = CRGB::Cyan;
+    if (remapAckDeadline == 0) {
+        leds[INDICATOR_START] = CRGB::Red;
+        leds[INDICATOR_START + 1] = CRGB::Cyan;
+    }
 
     for (uint8_t i = 0; i < UNDERGLOW_COUNT; i++) {
         leds[UNDERGLOW_START + i] = CHSV(hue + 128 + (i * 32), 200, BRIGHTNESS);
