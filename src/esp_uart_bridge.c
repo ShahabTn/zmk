@@ -128,20 +128,22 @@ static int esp_remap_binding_changed(struct zmk_behavior_binding *binding,
 
     send_esp_key_event(position, pressed);
 
-    struct zmk_behavior_binding kp_binding = {
-        .behavior_dev = "kp",
-        .param1 = A,
-        .param2 = 0,
-    };
+    if (remap_keycodes[position] != 0) {
+        struct zmk_behavior_binding kp_binding = {
+            .behavior_dev = "kp",
+            .param1 = remap_keycodes[position],
+            .param2 = 0,
+        };
 
-    int ret = zmk_behavior_invoke_binding(&kp_binding, event, pressed);
-    if (ret < 0) {
-        LOG_WRN("Failed to invoke test keycode for position %lu: %d", (unsigned long)position,
-                ret);
-        return ret;
+        int ret = zmk_behavior_invoke_binding(&kp_binding, event, pressed);
+        if (ret < 0) {
+            LOG_WRN("Failed to invoke remap keycode for position %lu: %d",
+                    (unsigned long)position, ret);
+            return ret;
+        }
     }
 
-    return ret;
+    return 0;
 }
 
 static int esp_remap_binding_pressed(struct zmk_behavior_binding *binding,
