@@ -116,10 +116,23 @@ CRGB color_for_key(uint8_t position) {
     return CRGB::White;
 }
 
-const char *remap_name_for_key(JsonVariant key) {
-    const char *tap1 = key["tap1"] | "";
+bool buzzer_enabled() {
+    JsonDocument doc;
 
-    if (strcmp(tap1, "KC_A") == 0 || strcmp(tap1, "KC_B") == 0 || strcmp(tap1, "KC_C") == 0) {
+    if (deserializeJson(doc, configJson)) {
+        return false;
+    }
+
+    return doc["settings"]["buzzer"] | false;
+}
+
+String remap_name_for_key(JsonVariant key) {
+    String tap1 = key["tap1"] | "";
+
+    tap1.trim();
+    tap1.toUpperCase();
+
+    if (tap1 == "KC_A" || tap1 == "KC_B" || tap1 == "KC_C") {
         return tap1;
     }
 
@@ -351,7 +364,9 @@ void handle_key_event(uint8_t position, bool pressed) {
     if (pressed) {
         leds[led] = color_for_key(position);
         keyLedReleaseAt[position % PER_KEY_COUNT] = millis() + 800;
-        tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
+        if (buzzer_enabled()) {
+            tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
+        }
     } else {
         leds[led] = CRGB::Blue;
         keyLedReleaseAt[position % PER_KEY_COUNT] = 0;
