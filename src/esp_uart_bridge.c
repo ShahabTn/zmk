@@ -9,17 +9,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <drivers/behavior.h>
 #include <zmk/behavior.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/keycode_state_changed.h>
-#include <dt-bindings/zmk/hid_usage_pages.h>
 #include <dt-bindings/zmk/keys.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define KEY_COUNT 28
 
-static uint16_t remap_keycodes[KEY_COUNT];
+static uint32_t remap_keycodes[KEY_COUNT];
 static char rx_buf[32];
 static uint8_t rx_len;
 static struct k_work_delayable uart_rx_work;
@@ -58,7 +58,7 @@ static void send_esp_key_event(uint32_t position, bool pressed) {
     }
 }
 
-static uint16_t keycode_from_name(const char *name) {
+static uint32_t keycode_from_name(const char *name) {
     if (strcmp(name, "KC_A") == 0 || strcmp(name, "A") == 0) {
         return A;
     }
