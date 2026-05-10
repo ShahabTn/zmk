@@ -1,3 +1,5 @@
+#define DT_DRV_COMPAT zmk_behavior_esp_remap
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/init.h>
@@ -7,10 +9,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zmk/behavior.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/keycode_state_changed.h>
-#include <zmk/events/position_state_changed.h>
 #include <dt-bindings/zmk/hid_usage_pages.h>
+#include <dt-bindings/zmk/keys.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -57,13 +60,13 @@ static void send_esp_key_event(uint32_t position, bool pressed) {
 
 static uint16_t keycode_from_name(const char *name) {
     if (strcmp(name, "KC_A") == 0 || strcmp(name, "A") == 0) {
-        return 0x04;
+        return A;
     }
     if (strcmp(name, "KC_B") == 0 || strcmp(name, "B") == 0) {
-        return 0x05;
+        return B;
     }
     if (strcmp(name, "KC_C") == 0 || strcmp(name, "C") == 0) {
-        return 0x06;
+        return C;
     }
     if (strcmp(name, "NONE") == 0) {
         return 0;
@@ -116,25 +119,47 @@ static int esp_uart_bridge_init(void) {
     return 0;
 }
 
-int esp_uart_bridge_listener(const zmk_event_t *eh) {
-    const struct zmk_position_state_changed *ev = as_zmk_position_state_changed(eh);
+static int esp_remap_binding_changed(struct zmk_behavior_binding *binding,
+                                     struct zmk_behavior_binding_event event, bool pressed) {
+    uint32_t position = binding->param1;
 
-    if (ev == NULL) {
-        return 0;
+    if (position >= KEY_COUNT) {
+        return -EINVAL;
     }
 
-    send_esp_key_event(ev->position, ev->state);
+    send_esp_key_event(position, pressed);
 
-    if (ev->position < KEY_COUNT && remap_keycodes[ev->position] != 0) {
-        raise_zmk_keycode_state_changed_from_encoded(remap_keycodes[ev->position], ev->state,
-                                                     k_uptime_get());
-        return ZMK_EV_EVENT_HANDLED;
+    if (remap_keycodes[position] != 0) {
+        raise_zmk_keycode_state_changed_from_encoded(remap_keycodes[position], pressed,
+                                                     event.timestamp);
     }
 
     return 0;
 }
 
-ZMK_LISTENER(esp_uart_bridge, esp_uart_bridge_listener);
-ZMK_SUBSCRIPTION(esp_uart_bridge, zmk_position_state_changed);
+static int esp_remap_binding_pressed(struct zmk_behavior_binding *binding,
+                                     struct zmk_behavior_binding_event event) {
+    return esp_remap_binding_changed(binding, event, true);
+}
+
+static int esp_remap_binding_released(struct zmk_behavior_binding *binding,
+                                      struct zmk_behavior_binding_event event) {
+    return esp_remap_binding_changed(binding, event, false);
+}
+
+static const struct behavior_driver_api esp_remap_driver_api = {
+    .binding_pressed = esp_remap_binding_pressed,
+    .binding_released = esp_remap_binding_released,
+};
+
+static int esp_remap_init(const struct device *dev) { return 0; }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ESP_REMAP_INST(n)                                                                  \
+    BEHAVIOR_DT_INST_DEFINE(n, esp_remap_init, NULL, NULL, NULL, POST_KERNEL,              \
+                            CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &esp_remap_driver_api)
+
+DT_INST_FOREACH_STATUS_OKAY(ESP_REMAP_INST)
+#endif
 
 SYS_INIT(esp_uart_bridge_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

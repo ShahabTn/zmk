@@ -2,16 +2,23 @@
 #include <dt-bindings/zmk/keys.h>
 
 / {
+    behaviors {
+        esp_remap: esp_remap {
+            compatible = "zmk,behavior-esp-remap";
+            #binding-cells = <1>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
         default_layer {
             bindings = <
-                &none &none &none &none &none
-                &none &none &none &none &none
-                &none &none &none &none &none &none
-                &none &none &none &none &none &none
-                &none &none &none &none &none &none
+                &esp_remap 0  &esp_remap 1  &esp_remap 2  &esp_remap 3  &esp_remap 4
+                &esp_remap 5  &esp_remap 6  &esp_remap 7  &esp_remap 8  &esp_remap 9
+                &esp_remap 10 &esp_remap 11 &esp_remap 12 &esp_remap 13 &esp_remap 14 &esp_remap 15
+                &esp_remap 16 &esp_remap 17 &esp_remap 18 &esp_remap 19 &esp_remap 20 &esp_remap 21
+                &esp_remap 22 &esp_remap 23 &esp_remap 24 &esp_remap 25 &esp_remap 26 &esp_remap 27
             >;
         };
     };

@@ -1,0 +1,13 @@
+description: ESP32 live remap behavior
+
+compatible: "zmk,behavior-esp-remap"
+
+include: behavior-metadata.yaml
+
+properties:
+  "#binding-cells":
+    type: int
+    const: 1
+
+binding-cells:
+  - position
