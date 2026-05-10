@@ -391,6 +391,9 @@ void handle_uart_line(const String &line) {
     if (sscanf(line.c_str(), "K %u %u", &position, &pressed) == 2) {
         handle_key_event(position, pressed != 0);
         Serial.printf("nRF key position %u %s\n", position, pressed ? "pressed" : "released");
+    } else if (line.startsWith("BOOT ")) {
+        Serial.println("nRF boot detected, syncing saved remaps");
+        sync_remaps_to_nrf();
     } else if (line.startsWith("ACK M ")) {
         remapAckCount++;
         fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Green);

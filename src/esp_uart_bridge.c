@@ -129,14 +129,12 @@ static int esp_remap_binding_changed(struct zmk_behavior_binding *binding,
 
     send_esp_key_event(position, pressed);
 
-    if (remap_keycodes[position] != 0) {
-        int ret = raise_zmk_keycode_state_changed_from_encoded(remap_keycodes[position],
-                                                               pressed, event.timestamp);
-        if (ret < 0) {
-            LOG_WRN("Failed to raise remap keycode for position %lu: %d",
-                    (unsigned long)position, ret);
-            return ret;
-        }
+    uint32_t keycode = remap_keycodes[position] != 0 ? remap_keycodes[position] : A;
+    int ret = raise_zmk_keycode_state_changed_from_encoded(keycode, pressed, event.timestamp);
+    if (ret < 0) {
+        LOG_WRN("Failed to raise remap keycode for position %lu: %d", (unsigned long)position,
+                ret);
+        return ret;
     }
 
     return 0;
