@@ -366,6 +366,10 @@ void start_web_gui() {
 
 void handle_key_event(uint8_t position, bool pressed) {
     uint8_t led = PER_KEY_START + (position % PER_KEY_COUNT);
+    String eventJson = "{\"type\":\"key\",\"position\":" + String(position) +
+                       ",\"pressed\":" + String(pressed ? "true" : "false") + "}";
+
+    webSocket.broadcastTXT(eventJson);
 
     if (pressed) {
         leds[led] = color_for_key(position);
@@ -398,6 +402,7 @@ void handle_uart_line(const String &line) {
         remapAckCount++;
         fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Green);
         FastLED.show();
+        webSocket.broadcastTXT("{\"type\":\"remap_ack\",\"line\":\"" + line + "\"}");
         Serial.printf("nRF remap ACK count: %u\n", remapAckCount);
     }
 }
