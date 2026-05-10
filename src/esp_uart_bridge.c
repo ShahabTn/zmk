@@ -78,6 +78,10 @@ static void handle_esp_line(char *line) {
     if (sscanf(line, "M %u %11s", &position, key_name) == 2 && position < KEY_COUNT) {
         remap_keycodes[position] = keycode_from_name(key_name);
         LOG_INF("ESP remap position %u to %s", position, key_name);
+
+        char ack[24];
+        snprintk(ack, sizeof(ack), "ACK M %u %s\n", position, key_name);
+        send_esp_line(ack);
     }
 }
 
