@@ -56,13 +56,13 @@ static void send_esp_key_event(uint32_t position, bool pressed) {
 }
 
 static uint16_t keycode_from_name(const char *name) {
-    if (strcmp(name, "KC_A") == 0) {
+    if (strcmp(name, "KC_A") == 0 || strcmp(name, "A") == 0) {
         return 0x04;
     }
-    if (strcmp(name, "KC_B") == 0) {
+    if (strcmp(name, "KC_B") == 0 || strcmp(name, "B") == 0) {
         return 0x05;
     }
-    if (strcmp(name, "KC_C") == 0) {
+    if (strcmp(name, "KC_C") == 0 || strcmp(name, "C") == 0) {
         return 0x06;
     }
     if (strcmp(name, "NONE") == 0) {
