@@ -12,7 +12,6 @@
 #include <drivers/behavior.h>
 #include <zmk/behavior.h>
 #include <zmk/event_manager.h>
-#include <zmk/events/keycode_state_changed.h>
 #include <dt-bindings/zmk/keys.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -130,8 +129,18 @@ static int esp_remap_binding_changed(struct zmk_behavior_binding *binding,
     send_esp_key_event(position, pressed);
 
     if (remap_keycodes[position] != 0) {
-        raise_zmk_keycode_state_changed_from_encoded(remap_keycodes[position], pressed,
-                                                     event.timestamp);
+        struct zmk_behavior_binding kp_binding = {
+            .behavior_dev = "kp",
+            .param1 = remap_keycodes[position],
+            .param2 = 0,
+        };
+
+        int ret = zmk_behavior_invoke_binding(&kp_binding, event, pressed);
+        if (ret < 0) {
+            LOG_WRN("Failed to invoke remap keycode for position %lu: %d",
+                    (unsigned long)position, ret);
+            return ret;
+        }
     }
 
     return 0;
