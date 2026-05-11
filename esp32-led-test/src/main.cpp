@@ -63,6 +63,8 @@ uint32_t keyLedReleaseAt[PER_KEY_COUNT];
 uint8_t lastRemapSyncCount;
 uint8_t remapAckCount;
 uint32_t remapAckDeadline;
+String lastEspRemapCommand = "-";
+String lastNrfStoredRemap = "-";
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
     for (uint8_t i = 0; i < count; i++) {
@@ -168,7 +170,11 @@ void mark_remap_sync_pending() {
 }
 
 void send_remap_line_to_nrf(uint8_t position, const String &remapName) {
-    send_nrf_line("M " + String(position) + " " + remapName + "\n");
+    lastEspRemapCommand = "M " + String(position) + " " + remapName;
+    webSocket.broadcastTXT("{\"type\":\"diag\",\"espSent\":\"" + lastEspRemapCommand + "\"}");
+    send_nrf_line(lastEspRemapCommand + "\n");
+    delay(5);
+    send_nrf_line("Q " + String(position) + "\n");
 }
 
 uint8_t sync_single_remap_to_nrf(uint8_t position, const String &value) {
@@ -440,6 +446,7 @@ void handle_key_event(uint8_t position, bool pressed) {
 void handle_uart_line(const String &line) {
     unsigned int position = 0;
     unsigned int pressed = 0;
+    char remapName[12] = {0};
 
     Serial.print("nRF UART: ");
     Serial.println(line);
@@ -456,6 +463,13 @@ void handle_uart_line(const String &line) {
         FastLED.show();
         webSocket.broadcastTXT("{\"type\":\"remap_ack\",\"line\":\"" + line + "\"}");
         Serial.printf("nRF remap ACK count: %u\n", remapAckCount);
+    } else if (sscanf(line.c_str(), "STORED M %u %11s", &position, remapName) == 2) {
+        lastNrfStoredRemap = "M " + String(position) + " " + String(remapName);
+        webSocket.broadcastTXT("{\"type\":\"diag\",\"nrfStored\":\"" + lastNrfStoredRemap + "\"}");
+        Serial.printf("nRF stored remap: %s\n", lastNrfStoredRemap.c_str());
+    } else if (sscanf(line.c_str(), "ACTIVE M %u %11s", &position, remapName) == 2) {
+        webSocket.broadcastTXT("{\"type\":\"diag\",\"nrfActive\":\"M " + String(position) +
+                               " " + String(remapName) + "\"}");
     }
 }
 

@@ -74,6 +74,25 @@ static uint32_t keycode_from_name(const char *name) {
     return 0;
 }
 
+static const char *keycode_name(uint32_t keycode) {
+    if (keycode == A) {
+        return "KC_A";
+    }
+    if (keycode == B) {
+        return "KC_B";
+    }
+    if (keycode == C) {
+        return "KC_C";
+    }
+    return "NONE";
+}
+
+static void send_stored_remap(unsigned int position) {
+    char msg[28];
+    snprintk(msg, sizeof(msg), "STORED M %u %s\n", position, keycode_name(remap_keycodes[position]));
+    send_esp_line(msg);
+}
+
 static void handle_esp_line(char *line) {
     unsigned int position = 0;
     char key_name[12] = {0};
@@ -84,10 +103,11 @@ static void handle_esp_line(char *line) {
         LOG_INF("ESP remap position %u to %s", position, key_name);
 
         char ack[24];
-        const char *accepted = keycode == A ? "KC_A" : keycode == B ? "KC_B" :
-                               keycode == C ? "KC_C" : "NONE";
-        snprintk(ack, sizeof(ack), "ACK M %u %s\n", position, accepted);
+        snprintk(ack, sizeof(ack), "ACK M %u %s\n", position, keycode_name(keycode));
         send_esp_line(ack);
+        send_stored_remap(position);
+    } else if (sscanf(line, "Q %u", &position) == 1 && position < KEY_COUNT) {
+        send_stored_remap(position);
     }
 }
 
@@ -131,6 +151,10 @@ static int esp_remap_binding_changed(struct zmk_behavior_binding *binding,
     }
 
     send_esp_key_event(position, pressed);
+    char msg[32];
+    snprintk(msg, sizeof(msg), "ACTIVE M %lu %s\n", (unsigned long)position,
+             keycode_name(remap_keycodes[position]));
+    send_esp_line(msg);
 
     if (remap_keycodes[position] != 0) {
         int ret = raise_zmk_keycode_state_changed_from_encoded(remap_keycodes[position],
