@@ -128,24 +128,60 @@ bool buzzer_enabled() {
     return doc["settings"]["buzzer"] | false;
 }
 
-String remap_name_for_key(JsonVariant key) {
-    String tap1 = key["tap1"] | "";
+String normalize_remap_name(String value) {
+    value.trim();
+    value.toUpperCase();
+    value.replace("_", "");
+    value.replace("-", "");
+    value.replace(" ", "");
 
-    tap1.trim();
-    tap1.toUpperCase();
-
-    if (tap1 == "KC_A" || tap1 == "KC_B" || tap1 == "KC_C") {
-        return tap1;
+    if (value == "A" || value == "KCA") {
+        return "KC_A";
+    }
+    if (value == "B" || value == "KCB") {
+        return "KC_B";
+    }
+    if (value == "C" || value == "KCC") {
+        return "KC_C";
+    }
+    if (value == "NONE") {
+        return "NONE";
     }
 
     return "NONE";
 }
+
+String remap_name_for_key(JsonVariant key) { return normalize_remap_name(key["tap1"] | ""); }
 
 void send_nrf_line(const String &line) {
     NrfSerial.print(line);
     NrfSerial.flush();
     Serial.print("ESP -> nRF: ");
     Serial.print(line);
+}
+
+void mark_remap_sync_pending() {
+    remapAckCount = 0;
+    remapAckDeadline = millis() + 1500;
+    fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Yellow);
+    FastLED.show();
+}
+
+void send_remap_line_to_nrf(uint8_t position, const String &remapName) {
+    send_nrf_line("M " + String(position) + " " + remapName + "\n");
+}
+
+uint8_t sync_single_remap_to_nrf(uint8_t position, const String &value) {
+    if (position >= 28) {
+        return 0;
+    }
+
+    String remapName = normalize_remap_name(value);
+    mark_remap_sync_pending();
+    send_remap_line_to_nrf(position, remapName);
+    lastRemapSyncCount = 1;
+    Serial.printf("Synced selected remap %u -> %s\n", position, remapName.c_str());
+    return 1;
 }
 
 uint8_t sync_remaps_to_nrf() {
@@ -159,10 +195,7 @@ uint8_t sync_remaps_to_nrf() {
     }
 
     JsonArray keys = doc["keys"].as<JsonArray>();
-    remapAckCount = 0;
-    remapAckDeadline = millis() + 1500;
-    fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Yellow);
-    FastLED.show();
+    mark_remap_sync_pending();
 
     for (JsonVariant key : keys) {
         uint8_t position = key["id"] | 255;
@@ -177,7 +210,7 @@ uint8_t sync_remaps_to_nrf() {
             continue;
         }
 
-        send_nrf_line("M " + String(position) + " " + remapName + "\n");
+        send_remap_line_to_nrf(position, remapName);
         delay(20);
         sent++;
     }
@@ -215,10 +248,9 @@ void load_config() {
     configJson = preferences.getString("config", DEFAULT_CONFIG);
 }
 
-uint8_t save_config(const String &json) {
+void save_config(const String &json) {
     configJson = json;
     preferences.putString("config", configJson);
-    return sync_remaps_to_nrf();
 }
 
 void send_config(uint8_t client) {
@@ -253,7 +285,13 @@ void save_http_config() {
         serializeJson(doc, nextConfig);
     }
 
-    uint8_t sent = save_config(nextConfig);
+    save_config(nextConfig);
+
+    uint8_t selectedPosition = doc["selected"] | 255;
+    const char *selectedRemap = doc["remap"] | "";
+    uint8_t sent = selectedPosition < 28 ? sync_single_remap_to_nrf(selectedPosition, selectedRemap)
+                                         : sync_remaps_to_nrf();
+
     server.send(200, "application/json",
                 "{\"type\":\"ok\",\"message\":\"config saved; remaps sent: " + String(sent) +
                     "\"}");
@@ -288,7 +326,13 @@ void handle_websocket_message(uint8_t client, const String &payload) {
     if (strcmp(type, "set_config") == 0) {
         String nextConfig;
         serializeJson(doc["config"], nextConfig);
-        uint8_t sent = save_config(nextConfig);
+        save_config(nextConfig);
+
+        uint8_t selectedPosition = doc["selected"] | 255;
+        const char *selectedRemap = doc["remap"] | "";
+        uint8_t sent = selectedPosition < 28 ? sync_single_remap_to_nrf(selectedPosition, selectedRemap)
+                                             : sync_remaps_to_nrf();
+
         String message = "config saved; remaps sent: " + String(sent);
         send_ok(client, message.c_str());
         Serial.println("GUI config saved");
