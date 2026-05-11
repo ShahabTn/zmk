@@ -143,6 +143,7 @@ String remap_name_for_key(JsonVariant key) {
 
 void send_nrf_line(const String &line) {
     NrfSerial.print(line);
+    NrfSerial.flush();
     Serial.print("ESP -> nRF: ");
     Serial.print(line);
 }
@@ -171,6 +172,7 @@ uint8_t sync_remaps_to_nrf() {
         }
 
         send_nrf_line("M " + String(position) + " " + remap_name_for_key(key) + "\n");
+        delay(20);
         sent++;
     }
 

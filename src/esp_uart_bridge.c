@@ -79,11 +79,14 @@ static void handle_esp_line(char *line) {
     char key_name[12] = {0};
 
     if (sscanf(line, "M %u %11s", &position, key_name) == 2 && position < KEY_COUNT) {
-        remap_keycodes[position] = keycode_from_name(key_name);
+        uint32_t keycode = keycode_from_name(key_name);
+        remap_keycodes[position] = keycode;
         LOG_INF("ESP remap position %u to %s", position, key_name);
 
         char ack[24];
-        snprintk(ack, sizeof(ack), "ACK M %u %s\n", position, key_name);
+        const char *accepted = keycode == A ? "KC_A" : keycode == B ? "KC_B" :
+                               keycode == C ? "KC_C" : "NONE";
+        snprintk(ack, sizeof(ack), "ACK M %u %s\n", position, accepted);
         send_esp_line(ack);
     }
 }
