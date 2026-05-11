@@ -79,6 +79,15 @@
           <div class="metric"><div class="k">nRF stored</div><div class="v" id="diagNrf">-</div></div>
         </div>
         <div class="muted" id="diagActive">active: -</div>
+        <div class="field">
+          <label>Direct physical-key test</label>
+          <div class="grid2">
+            <button class="btn" id="forceA">Force KC_A</button>
+            <button class="btn" id="forceB">Force KC_B</button>
+            <button class="btn" id="forceC">Force KC_C</button>
+            <button class="btn" id="forceNone">Force NONE</button>
+          </div>
+        </div>
       </div>
       <div class="card" id="editor">
         <div class="card-title">Key Remapping</div>
@@ -118,7 +127,7 @@ const positions=[
   {id:16,r:4,c:1,label:"MAC"},{id:17,r:4,c:2},{id:18,r:4,c:3},{id:19,r:4,c:4},{id:20,r:4,c:5},{id:21,r:4,c:6},
   {id:22,r:5,c:1,label:"WIN"},{id:23,r:5,c:2},{id:24,r:5,c:3},{id:25,r:5,c:4},{id:26,r:5,c:5},{id:27,r:5,c:6}
 ];
-let ws,selected=0,layer="trading",remap=false;
+let ws,selected=0,layer="trading",remap=false,lastPhysical=null;
 let config={version:2,layer:"trading",settings:{indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},keys:[]};
 for(let i=0;i<keyCount;i++)config.keys.push({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""});
 positions.forEach(p=>{if(p.label)config.keys[p.id].label=p.label});
@@ -134,14 +143,19 @@ function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos
 function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCase().replace(/[_\s-]/g,"");if(s==="A"||s==="KCA")return"KC_A";if(s==="B"||s==="KCB")return"KC_B";if(s==="C"||s==="KCC")return"KC_C";if(s==="NONE")return"NONE";return raw}
 function savePanel(){if(!config.keys[selected])return;const k=config.keys[selected];k.label=document.getElementById("labelInput").value;k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);document.getElementById("tap1").value=k.tap1;document.getElementById("tap2").value=k.tap2;document.getElementById("hold").value=k.hold;k.params=document.getElementById("paramsInput").value;config.settings.animation=document.getElementById("animationInput").value;config.settings.buzzer=document.getElementById("buzzerInput").checked;config.settings.haptic=document.getElementById("hapticInput").checked;renderPad()}
 function setRemapState(){document.querySelectorAll("#editor input,#editor select,#editor textarea").forEach(el=>el.disabled=!remap);document.getElementById("remapBtn").className="btn"+(remap?" active":"");document.getElementById("remapBtn").textContent=remap?"remapping on":"remapping off"}
-function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="key"){document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="diag"){if(msg.espSent)document.getElementById("diagEsp").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored;if(msg.nrfActive)document.getElementById("diagActive").textContent="active: "+msg.nrfActive}if(msg.type==="remap_ack"){document.getElementById("lastMsg").textContent=msg.line}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
+function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="key"){lastPhysical=msg.position;document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="diag"){if(msg.espSent)document.getElementById("diagEsp").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored;if(msg.nrfActive)document.getElementById("diagActive").textContent="active: "+msg.nrfActive}if(msg.type==="remap_ack"){document.getElementById("lastMsg").textContent=msg.line}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
 function normalizeConfig(next){next.settings=Object.assign({indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},next.settings||{});next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
 function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
 async function saveConfig(){savePanel();const remap=config.keys[selected]?config.keys[selected].tap1:"";const body={type:"set_config",config:config,selected:selected,remap:remap};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
+async function forcePhysical(remap){if(lastPhysical===null){toast("press physical key first");document.getElementById("lastMsg").textContent="press physical key first";return}const body={position:lastPhysical,remap:remap};document.getElementById("diagEsp").textContent=`M ${lastPhysical} ${remap}`;const res=await fetch("/api/remap",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=`direct ${msg.position} ${msg.remap}`}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("direct remap sent")}
 function setConn(ok){document.getElementById("conn").className="pill "+(ok?"ok":"bad");document.getElementById("conn").textContent=ok?"connected":"offline"}
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1200)}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 document.getElementById("applyBtn").onclick=()=>saveConfig().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("save failed")});
+document.getElementById("forceA").onclick=()=>forcePhysical("KC_A").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
+document.getElementById("forceB").onclick=()=>forcePhysical("KC_B").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
+document.getElementById("forceC").onclick=()=>forcePhysical("KC_C").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
+document.getElementById("forceNone").onclick=()=>forcePhysical("NONE").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
 document.getElementById("exportBtn").onclick=()=>{savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)};
 document.getElementById("remapBtn").onclick=()=>{remap=!remap;setRemapState()};
 document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{document.querySelectorAll("[data-layer]").forEach(x=>x.classList.remove("active"));el.classList.add("active");layer=el.dataset.layer;config.layer=layer;document.getElementById("currentLayer").textContent=el.textContent.trim();document.getElementById("layerPill").textContent="layer: "+el.textContent.trim().toLowerCase();selectKey(selected)});

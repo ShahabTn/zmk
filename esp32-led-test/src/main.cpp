@@ -304,6 +304,33 @@ void save_http_config() {
     Serial.println("GUI config saved over HTTP");
 }
 
+void send_http_remap() {
+    String body = server.arg("plain");
+
+    if (body.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"empty body\"}");
+        return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return;
+    }
+
+    uint8_t position = doc["position"] | 255;
+    const char *remap = doc["remap"] | "";
+    uint8_t sent = sync_single_remap_to_nrf(position, remap);
+
+    String normalized = normalize_remap_name(remap);
+    server.send(200, "application/json",
+                "{\"type\":\"ok\",\"message\":\"direct remap sent\",\"position\":" +
+                    String(position) + ",\"remap\":\"" + normalized + "\",\"sent\":" +
+                    String(sent) + "}");
+}
+
 void send_ok(uint8_t client, const char *message) {
     JsonDocument doc;
     doc["type"] = "ok";
@@ -411,6 +438,7 @@ void start_web_gui() {
     });
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
+    server.on("/api/remap", HTTP_POST, send_http_remap);
     server.onNotFound([]() {
         Serial.printf("HTTP route not found: %s\n", server.uri().c_str());
         server.send(404, "text/plain", "not found");
