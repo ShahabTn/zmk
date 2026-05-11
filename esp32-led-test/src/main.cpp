@@ -171,7 +171,13 @@ uint8_t sync_remaps_to_nrf() {
             continue;
         }
 
-        send_nrf_line("M " + String(position) + " " + remap_name_for_key(key) + "\n");
+        String remapName = remap_name_for_key(key);
+
+        if (remapName == "NONE") {
+            continue;
+        }
+
+        send_nrf_line("M " + String(position) + " " + remapName + "\n");
         delay(20);
         sent++;
     }
