@@ -534,7 +534,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
     render_test_pattern();
 
-    Serial.println("ZMK-BLE ESP32 LED test");
+    Serial.println("ESP-A firmware");
     Serial.println("LED 0: battery");
     Serial.println("LEDs 1-5: temporary per-key RGB");
     Serial.println("LEDs 6-7: indicators");

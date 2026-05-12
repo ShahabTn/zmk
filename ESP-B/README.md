@@ -1,6 +1,6 @@
-# ESP32 Side-B Firmware
+# ESP-B Firmware
 
-Initial Side-B bring-up firmware for the display half of the split macropad.
+Initial ESP32-S3 bring-up firmware for Side-B, the display half of the split macropad.
 
 ## Hardware Covered
 

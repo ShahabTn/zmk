@@ -1,6 +1,6 @@
-# ESP32 LED Test
+# ESP-A Firmware
 
-Temporary firmware for testing a 10 LED strip from the ESP32-S3 before the PCB arrives.
+Side-A ESP32-S3 firmware for LEDs, sensors, UART link to the Side-A nRF52840, and the local web GUI.
 
 ## Wiring
 
@@ -23,7 +23,7 @@ Temporary firmware for testing a 10 LED strip from the ESP32-S3 before the PCB a
 - ATECC608A: `0x60`
 - BH1750: `0x23`
 
-## Temporary LED Allocation
+## Current Temporary LED Allocation
 
 - LED 0: battery indicator
 - LEDs 1-5: temporary per-key RGB
