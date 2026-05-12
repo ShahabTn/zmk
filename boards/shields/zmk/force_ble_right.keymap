@@ -1,1 +1,13 @@
-#include "force_ble.keymap"
+/*
+ * Side-B has no switches. The central Side-A owns the active keymap.
+ */
+
+/ {
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+            bindings = <>;
+        };
+    };
+};
