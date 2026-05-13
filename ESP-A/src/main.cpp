@@ -65,6 +65,7 @@ uint8_t remapAckCount;
 uint32_t remapAckDeadline;
 String lastEspRemapCommand = "-";
 String lastNrfStoredRemap = "-";
+uint32_t restartAt;
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
     for (uint8_t i = 0; i < count; i++) {
@@ -267,6 +268,70 @@ void send_http_config() {
     server.send(200, "application/json", "{\"type\":\"config\",\"config\":" + configJson + "}");
 }
 
+String json_escape(const String &value) {
+    String escaped;
+    escaped.reserve(value.length() + 8);
+
+    for (size_t i = 0; i < value.length(); i++) {
+        char c = value[i];
+        if (c == '"' || c == '\\') {
+            escaped += '\\';
+        }
+        escaped += c;
+    }
+
+    return escaped;
+}
+
+void send_network_info() {
+    bool connected = WiFi.status() == WL_CONNECTED;
+    String mode = connected ? "sta" : "ap";
+    String ssid = connected ? WiFi.SSID() : AP_SSID;
+    String ip = connected ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
+    String savedSsid = preferences.getString("wifi_ssid", "");
+
+    server.send(200, "application/json",
+                "{\"type\":\"network\",\"mode\":\"" + mode + "\",\"ssid\":\"" +
+                    json_escape(ssid) + "\",\"savedSsid\":\"" + json_escape(savedSsid) +
+                    "\",\"ip\":\"" + ip + "\",\"hostname\":\"" + String(MDNS_NAME) +
+                    ".local\"}");
+}
+
+void save_wifi_settings() {
+    String body = server.arg("plain");
+
+    if (body.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"empty body\"}");
+        return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return;
+    }
+
+    String ssid = doc["ssid"] | "";
+    String password = doc["password"] | "";
+    ssid.trim();
+
+    if (ssid.length() == 0) {
+        preferences.remove("wifi_ssid");
+        preferences.remove("wifi_password");
+        server.send(200, "application/json",
+                    "{\"type\":\"ok\",\"message\":\"Wi-Fi cleared; restarting in AP mode\"}");
+    } else {
+        preferences.putString("wifi_ssid", ssid);
+        preferences.putString("wifi_password", password);
+        server.send(200, "application/json",
+                    "{\"type\":\"ok\",\"message\":\"Wi-Fi saved; restarting\"}");
+    }
+
+    restartAt = millis() + 900;
+}
+
 void save_http_config() {
     String body = server.arg("plain");
 
@@ -389,11 +454,17 @@ void on_websocket_event(uint8_t client, WStype_t type, uint8_t *payload, size_t 
 }
 
 void start_network() {
-    if (strlen(WIFI_SSID) > 0) {
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    String ssid = preferences.getString("wifi_ssid", WIFI_SSID);
+    String password = preferences.getString("wifi_password", WIFI_PASSWORD);
 
-        Serial.printf("Connecting to Wi-Fi SSID %s", WIFI_SSID);
+    WiFi.persistent(false);
+    WiFi.setHostname(MDNS_NAME);
+
+    if (ssid.length() > 0) {
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(ssid.c_str(), password.c_str());
+
+        Serial.printf("Connecting to Wi-Fi SSID %s", ssid.c_str());
         for (uint8_t i = 0; i < 30 && WiFi.status() != WL_CONNECTED; i++) {
             delay(250);
             Serial.print(".");
@@ -436,6 +507,8 @@ void start_web_gui() {
     server.on("/favicon.ico", HTTP_GET, []() {
         server.send(204);
     });
+    server.on("/api/network", HTTP_GET, send_network_info);
+    server.on("/api/wifi", HTTP_POST, save_wifi_settings);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
@@ -551,6 +624,10 @@ void setup() {
 
 void loop() {
     static uint8_t hue = 0;
+
+    if (restartAt != 0 && millis() > restartAt) {
+        ESP.restart();
+    }
 
     poll_nrf_uart();
     server.handleClient();
