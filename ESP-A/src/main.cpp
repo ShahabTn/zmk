@@ -505,11 +505,17 @@ void start_web_gui() {
 
     server.on("/", HTTP_GET, []() {
         File file = LittleFS.open("/index.html", "r");
+        server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        server.sendHeader("Pragma", "no-cache");
+        server.sendHeader("Expires", "0");
         server.streamFile(file, "text/html");
         file.close();
     });
     server.on("/index.html", HTTP_GET, []() {
         File file = LittleFS.open("/index.html", "r");
+        server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        server.sendHeader("Pragma", "no-cache");
+        server.sendHeader("Expires", "0");
         server.streamFile(file, "text/html");
         file.close();
     });
