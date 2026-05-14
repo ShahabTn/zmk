@@ -38,6 +38,7 @@ constexpr char WIFI_PASSWORD[] = "";
 constexpr char AP_SSID[] = "ZMK-BLE-Macropad";
 constexpr char AP_PASSWORD[] = "12345678";
 constexpr uint8_t WIFI_CONNECT_TRIES = 24;
+constexpr uint8_t WIFI_TEST_TRIES = 20;
 constexpr char DEFAULT_CONFIG[] =
     "{\"version\":1,\"layer\":\"trading\",\"keys\":[{\"id\":0,\"label\":\"BUY\","
     "\"type\":\"broker_api\",\"color\":\"#ef9f27\",\"tap1\":\"BUY 0.01 XAUUSD\","
@@ -339,6 +340,62 @@ void save_wifi_settings() {
     restartAt = millis() + 900;
 }
 
+void test_wifi_settings() {
+    String body = server.arg("plain");
+
+    if (body.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"empty body\"}");
+        return;
+    }
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return;
+    }
+
+    String ssid = doc["ssid"] | "";
+    String password = doc["password"] | "";
+    ssid.trim();
+
+    if (ssid.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"SSID required\"}");
+        return;
+    }
+
+    Serial.printf("Testing home Wi-Fi SSID %s", ssid.c_str());
+    WiFi.disconnect(false, false);
+    delay(100);
+    WiFi.begin(ssid.c_str(), password.c_str());
+
+    for (uint8_t i = 0; i < WIFI_TEST_TRIES && WiFi.status() != WL_CONNECTED; i++) {
+        delay(250);
+        Serial.print(".");
+    }
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+        server.send(200, "application/json",
+                    "{\"type\":\"wifi_test\",\"ok\":true,\"message\":\"Wi-Fi test connected\","
+                    "\"ssid\":\"" +
+                        json_escape(WiFi.SSID()) + "\",\"ip\":\"" +
+                        WiFi.localIP().toString() + "\"}");
+        Serial.printf("Wi-Fi test connected: %s\n", WiFi.localIP().toString().c_str());
+    } else {
+        server.send(200, "application/json",
+                    "{\"type\":\"wifi_test\",\"ok\":false,\"message\":\"Wi-Fi test failed\"}");
+        Serial.println("Wi-Fi test failed");
+    }
+
+    if (wifiSsid.length() > 0 && WiFi.SSID() != wifiSsid) {
+        WiFi.disconnect(false, false);
+        delay(100);
+        WiFi.begin(wifiSsid.c_str(), wifiPassword.c_str());
+    }
+}
+
 void save_http_config() {
     String body = server.arg("plain");
 
@@ -524,6 +581,7 @@ void start_web_gui() {
     });
     server.on("/api/network", HTTP_GET, send_network_info);
     server.on("/api/wifi", HTTP_POST, save_wifi_settings);
+    server.on("/api/wifi/test", HTTP_POST, test_wifi_settings);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
