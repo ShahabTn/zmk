@@ -5,7 +5,57 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ZMK-BLE Remapper</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#ecebea;color:#181818}.app{height:100vh;display:flex;flex-direction:column}.top{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;background:#fff;border-bottom:1px solid #d6d5d0}.brand{font-size:17px;font-weight:700}.brand span{color:#378add}.top-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pill{border:1px solid #d6d6d0;border-radius:999px;padding:6px 11px;background:#f5f5f4;color:#555;font-size:13px}.pill.ok{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7}.pill.bad{background:#fdeaea;color:#8a1f1f;border-color:#f1b3b3}.btn{border:1px solid #c9c9c3;border-radius:8px;background:#fff;padding:9px 13px;cursor:pointer;font:inherit}.btn.primary{background:#378add;border-color:#378add;color:#fff}.btn.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}.body{min-height:0;flex:1;display:grid;grid-template-columns:190px minmax(600px,1fr) 330px}.side{background:#f6f6f4;border-right:1px solid #d9d8d2;padding:16px}.section{margin-bottom:18px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#777;margin-bottom:9px;font-weight:700}.layer{display:flex;align-items:center;gap:10px;border:1px solid transparent;border-radius:10px;padding:10px;margin-bottom:9px;background:transparent;color:#555;cursor:pointer;transition:.15s}.layer:hover{background:#fff}.layer.active{background:#fff;border-color:#378add;color:#185fa5;transform:scale(1.04);box-shadow:0 5px 14px rgba(55,138,221,.14)}.dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}.hint{font-size:13px;line-height:1.35;color:#666;background:#fff;border:1px solid #ddd;border-radius:10px;padding:11px}.main{display:flex;align-items:center;justify-content:center;padding:22px;background:#ecebea;overflow:auto}.pad-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}.pad{background:#fff;border:1px solid #cfcfca;border-radius:16px;padding:18px;display:grid;grid-template-columns:72px 26px 72px 26px repeat(4,72px);grid-template-rows:repeat(5,72px);column-gap:10px;row-gap:10px}.key{border:1px solid #d2d2cc;border-radius:10px;background:#f5f5f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;user-select:none;min-width:72px;min-height:72px;transition:.15s}.key:hover{border-color:#378add;transform:translateY(-1px)}.key.selected{border:2px solid #378add;background:#e6f1fb}.key.trading{border-color:#ef9f27;background:#faeeda}.key.system{border-color:#7f77dd;background:#eeedfe}.key.smart{border-color:#1d9e75;background:#e1f5ee}.key.empty{opacity:.25;border-style:dashed}.key .name{font-size:15px;font-weight:800;line-height:1}.key .pos{font-size:10px;color:#777}.acts{display:flex;flex-direction:column;gap:2px;width:92%;font-size:9px;color:#444;line-height:1.1}.act{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.5);border-radius:4px;padding:1px 3px}.panel{background:#fff;border-left:1px solid #d9d8d2;padding:16px;overflow:auto}.card{background:#f7f7f5;border:1px solid #deded8;border-radius:12px;padding:13px;margin-bottom:12px}.card-title{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#777;font-weight:700;margin-bottom:8px}.big{font-size:22px;font-weight:800}.muted{color:#777;font-size:13px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:#fff;border:1px solid #e0dfda;border-radius:10px;padding:10px}.metric .k{font-size:12px;color:#777}.metric .v{font-size:18px;font-weight:800;margin-top:3px}.field{margin-top:11px}.field label{display:block;color:#555;font-size:13px;margin-bottom:5px;font-weight:600}.field input,.field select,.field textarea{width:100%;border:1px solid #d6d6d0;border-radius:9px;background:#fff;padding:9px;font:inherit}.field textarea{min-height:68px;resize:vertical}.field input:disabled,.field select:disabled,.field textarea:disabled{opacity:.55;background:#f1f1ef}.tap-row{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center;margin-top:8px}.tap{font-size:12px;color:#185fa5;background:#e6f1fb;border:1px solid #b5d4f4;border-radius:999px;padding:5px;text-align:center}.swatches{display:flex;gap:7px;flex-wrap:wrap}.sw{width:25px;height:25px;border-radius:50%;border:2px solid transparent;cursor:pointer}.sw.active{border-color:#1a1a1a}.switch-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.toggle{appearance:none;width:42px;height:24px;border-radius:999px;background:#ccc;position:relative;cursor:pointer}.toggle:checked{background:#378add}.toggle:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;left:2px;top:2px;transition:.15s}.toggle:checked:before{left:20px}.bottom{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid #d6d5d0;color:#666;font-size:13px}.toast{position:fixed;right:18px;bottom:48px;background:#1b5e20;color:#fff;border-radius:9px;padding:10px 13px;opacity:0;transform:translateY(8px);transition:.18s}.toast.show{opacity:1;transform:none}@media(max-width:1050px){.body{grid-template-columns:1fr}.side{display:none}.panel{border-left:0;border-top:1px solid #d9d8d2}.pad{transform:scale(.86);transform-origin:top center}.main{align-items:flex-start}}
+*{box-sizing:border-box}
+body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#e9ece7;color:#171717}
+.app{height:100vh;display:flex;flex-direction:column}
+.top{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px;background:#ffffff;border-bottom:1px solid #d6d9d1}
+.brand{font-size:18px;font-weight:800}.brand span{color:#378add}
+.top-right{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.pill{border:1px solid #d6d6d0;border-radius:999px;padding:7px 12px;background:#f5f5f4;color:#555;font-size:13px}
+.pill.ok{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7}.pill.bad{background:#fdeaea;color:#8a1f1f;border-color:#f1b3b3}
+.btn{border:1px solid #c9c9c3;border-radius:8px;background:#fff;padding:9px 13px;cursor:pointer;font:inherit}
+.btn.primary{background:#378add;border-color:#378add;color:#fff}.btn.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.tool-toggle{display:flex;align-items:center;gap:6px;border:1px solid #d1d5cc;border-radius:999px;padding:7px 10px;background:#f8faf6;color:#333;font-size:13px}
+.tool-toggle input{margin:0}
+.color-tool{display:flex;align-items:center;gap:7px;border:1px solid #d1d5cc;border-radius:999px;padding:5px 8px;background:#f8faf6;font-size:13px}
+.color-tool input{width:26px;height:26px;border:0;background:transparent;padding:0}
+.body{min-height:0;flex:1;display:grid;grid-template-columns:255px minmax(650px,1fr) 360px}
+.side{background:#f7f8f4;border-right:1px solid #d9dcd5;padding:18px;overflow:auto}
+.main{display:flex;align-items:flex-start;justify-content:center;padding:20px 24px 28px;background:linear-gradient(135deg,#e7ebe6 0%,#f5f0e8 58%,#e6eef6 100%);overflow:auto}
+.panel{background:#fff;border-left:1px solid #d9dcd5;padding:18px;overflow:auto}
+.section{margin-bottom:18px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#777;margin-bottom:10px;font-weight:800}
+.layer{display:flex;align-items:center;gap:11px;border:1px solid transparent;border-radius:10px;padding:11px;margin-bottom:9px;background:transparent;color:#555;cursor:pointer;transition:.15s}
+.layer:hover{background:#fff}.layer.active{background:#fff;border-color:#378add;color:#185fa5;transform:scale(1.03);box-shadow:0 6px 16px rgba(55,138,221,.16)}
+.dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.card{background:#fbfbf8;border:1px solid #deded8;border-radius:12px;padding:13px;margin-bottom:12px}
+.card-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#777;font-weight:800;margin-bottom:9px}
+.big{font-size:23px;font-weight:850}.muted{color:#6b6b66;font-size:13px;line-height:1.28}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.metric{background:#fff;border:1px solid #e0dfda;border-radius:10px;padding:10px;min-width:0}
+.metric .k{font-size:12px;color:#777}.metric .v{font-size:18px;font-weight:850;margin-top:3px;overflow:hidden;text-overflow:ellipsis}
+.pad-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;padding-top:2px}
+.tft{width:min(455px,70vw);aspect-ratio:4/3;background:#050505;border:5px solid #202020;border-radius:4px;box-shadow:0 10px 24px rgba(0,0,0,.2);color:#f5f5f5;padding:16px;display:grid;grid-template-rows:auto 1fr auto;gap:11px}
+.tft-top{display:flex;align-items:center;justify-content:space-between;color:#9fd0ff;font-weight:750}.tft-layer{font-size:25px;font-weight:900}.tft-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tft-tile{border:1px solid #30363d;border-radius:8px;padding:9px;background:#111820}.tft-tile .k{font-size:11px;color:#9aa4ad}.tft-tile .v{font-size:20px;font-weight:850;margin-top:2px}
+.tft-news{border-left:4px solid #e24b4a;padding-left:9px;color:#ffd5d5;font-weight:750}
+.pad{background:#fff;border:1px solid #cfcfca;border-radius:16px;padding:18px;display:grid;grid-template-columns:72px 26px 72px 26px repeat(4,72px);grid-template-rows:repeat(5,72px);column-gap:10px;row-gap:10px}
+.key{border:1px solid #d2d2cc;border-radius:10px;background:#f5f5f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;user-select:none;min-width:72px;min-height:72px;transition:.15s}
+.key:hover{border-color:#378add;transform:translateY(-1px)}.key.selected{border:2px solid #378add;background:#e6f1fb}
+.key.trading{border-color:#ef9f27;background:#faeeda}.key.system{border-color:#7f77dd;background:#eeedfe}.key.smart{border-color:#1d9e75;background:#e1f5ee}.key.empty{opacity:.3;border-style:dashed}
+.key .name{font-size:15px;font-weight:850;line-height:1}.key .pos{font-size:10px;color:#777}
+.acts{display:flex;flex-direction:column;gap:2px;width:92%;font-size:9px;color:#444;line-height:1.1}.act{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.58);border-radius:4px;padding:1px 3px}
+.field{margin-top:11px}.field label{display:block;color:#555;font-size:13px;margin-bottom:5px;font-weight:650}
+.field input,.field select,.field textarea{width:100%;border:1px solid #d6d6d0;border-radius:9px;background:#fff;padding:9px;font:inherit}
+.field textarea{min-height:68px;resize:vertical}.field input:disabled,.field select:disabled,.field textarea:disabled{opacity:.55;background:#f1f1ef}
+.tap-row{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center;margin-top:8px}.tap{font-size:12px;color:#185fa5;background:#e6f1fb;border:1px solid #b5d4f4;border-radius:999px;padding:5px;text-align:center}
+.switch-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.toggle{appearance:none;width:42px;height:24px;border-radius:999px;background:#ccc;position:relative;cursor:pointer}.toggle:checked{background:#378add}.toggle:before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;left:2px;top:2px;transition:.15s}.toggle:checked:before{left:20px}
+.news-card{background:#fff;border:1px solid #deded8;border-radius:12px;padding:13px;margin-bottom:12px}
+.news-list{display:flex;flex-direction:column;gap:10px}.news-item{border:1px solid #ead6d6;border-left:5px solid #e24b4a;border-radius:9px;padding:10px;background:#fff8f8}
+.news-item.soon{background:#fff0f0;border-left-width:8px;box-shadow:0 8px 20px rgba(226,75,74,.14)}
+.news-title{font-weight:850}.news-meta{display:flex;justify-content:space-between;gap:8px;color:#666;font-size:13px;margin-top:5px}.countdown{font-weight:850;color:#b71c1c}.countdown.big-count{font-size:23px;display:block;margin-top:6px}
+.bottom{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid #d6d5d0;color:#666;font-size:13px}
+.toast{position:fixed;right:18px;bottom:48px;background:#1b5e20;color:#fff;border-radius:9px;padding:10px 13px;opacity:0;transform:translateY(8px);transition:.18s}.toast.show{opacity:1;transform:none}
+@media(max-width:1150px){.body{grid-template-columns:1fr}.side{order:2}.panel{order:3;border-left:0;border-top:1px solid #d9dcd5}.main{order:1}.pad{transform:scale(.86);transform-origin:top center}}
 </style>
 </head>
 <body>
@@ -14,39 +64,35 @@
     <div class="brand"><span>ZMK-BLE</span> · remapper</div>
     <div class="top-right">
       <span id="conn" class="pill bad">offline</span>
-      <span id="layerPill" class="pill">layer: trading</span>
+      <span id="layerPill" class="pill">layer: system</span>
+      <label class="tool-toggle"><input type="checkbox" id="headerBuzzer"> buzzer</label>
+      <label class="tool-toggle"><input type="checkbox" id="headerHaptic"> haptic feedback</label>
+      <label class="color-tool">indicator <input id="indicatorColorInput" type="color" value="#378add"></label>
+      <label class="color-tool">underglow <input id="underglowColorInput" type="color" value="#7f77dd"></label>
       <button class="btn" id="remapBtn">remapping off</button>
       <button class="btn" id="exportBtn">export</button>
       <button class="btn primary" id="applyBtn">apply</button>
     </div>
   </div>
+
   <div class="body">
     <aside class="side">
       <div class="section">
         <div class="label">Layers</div>
-        <div class="layer active" data-layer="trading"><span class="dot" style="background:#ef9f27"></span><strong>Trading</strong></div>
+        <div class="layer active" data-layer="system"><span class="dot" style="background:#7f77dd"></span><strong>System</strong></div>
         <div class="layer" data-layer="smart_home"><span class="dot" style="background:#1d9e75"></span><strong>Smart home</strong></div>
-        <div class="layer" data-layer="system"><span class="dot" style="background:#7f77dd"></span><strong>System</strong></div>
+        <div class="layer" data-layer="trading"><span class="dot" style="background:#ef9f27"></span><strong>Trading</strong></div>
       </div>
-      <div class="section">
-        <div class="label">Remapping</div>
-        <div class="hint">Open remapping mode, select a key, then edit 1 tap, 2 taps, hold, LED colors, buzzer, and haptic behavior.</div>
-      </div>
-      <div class="section">
-        <div class="label">Security</div>
-        <div class="hint">CJMCU-608 / ATECC608A can be shown as secure element status once the PCB is populated.</div>
-      </div>
-    </aside>
-    <main class="main">
-      <div class="pad-wrap">
-        <div class="pad" id="pad"></div>
-      </div>
-    </main>
-    <aside class="panel">
       <div class="card">
-        <div class="card-title">Current Layer</div>
-        <div class="big" id="currentLayer">Trading</div>
-        <div class="muted">active on macropad</div>
+        <div class="card-title">Sensors</div>
+        <div class="grid2">
+          <div class="metric"><div class="k">inside</div><div class="v" id="tempInside">24.1°C</div><div class="muted">temperature sensor</div></div>
+          <div class="metric"><div class="k">outside</div><div class="v" id="tempOutside">--°C</div><div class="muted" id="outsideCity">Düsseldorf</div></div>
+          <div class="metric"><div class="k">power</div><div class="v">74%</div><div class="muted">battery level</div></div>
+          <div class="metric"><div class="k">voltage</div><div class="v">3.92V</div><div class="muted">voltage measurement</div></div>
+          <div class="metric"><div class="k">current</div><div class="v">142mA</div><div class="muted">current measurement</div></div>
+          <div class="metric"><div class="k">secure</div><div class="v" id="secureStatus">ready</div><div class="muted">secure element</div></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">Wi-Fi</div>
@@ -68,26 +114,35 @@
           <button class="btn" id="rebootEsp">reboot ESP</button>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Power</div>
-        <div class="big" id="batteryValue">Battery 74%</div>
-        <div class="muted">nRF battery sense, ESP display later</div>
+    </aside>
+
+    <main class="main">
+      <div class="pad-wrap">
+        <div class="tft">
+          <div class="tft-top"><span>ZMK-BLE</span><span id="tftBattery">74%</span></div>
+          <div class="tft-grid">
+            <div class="tft-tile"><div class="k">layer</div><div class="v" id="tftLayer">System</div></div>
+            <div class="tft-tile"><div class="k">outside</div><div class="v" id="tftOutside">--°C</div></div>
+            <div class="tft-tile"><div class="k">inside</div><div class="v">24.1°C</div></div>
+            <div class="tft-tile"><div class="k">next red news</div><div class="v" id="tftNewsTime">--</div></div>
+          </div>
+          <div class="tft-news" id="tftNewsTitle">Waiting for important news</div>
+        </div>
+        <div class="pad" id="pad"></div>
+      </div>
+    </main>
+
+    <aside class="panel">
+      <div class="news-card">
+        <div class="card-title">Important News</div>
+        <div class="big" id="nextNewsCountdown">loading</div>
+        <div class="muted" id="newsSource">ForexFactory high impact only</div>
+        <div class="news-list" id="newsList"></div>
       </div>
       <div class="card">
-        <div class="card-title">Temperature</div>
-        <div class="grid2">
-          <div class="metric"><div class="k">inside</div><div class="v" id="tempInside">24.1°C</div><div class="muted">SHT40 side-B</div></div>
-          <div class="metric"><div class="k">outside</div><div class="v" id="tempOutside">18°C</div><div class="muted" id="outsideCity">Düsseldorf</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Sensors</div>
-        <div class="grid2">
-          <div class="metric"><div class="k">INA219</div><div class="v">142mA</div></div>
-          <div class="metric"><div class="k">BH1750</div><div class="v">380lx</div></div>
-          <div class="metric"><div class="k">ATECC608A</div><div class="v" id="ateccStatus">ready</div></div>
-          <div class="metric"><div class="k">Battery</div><div class="v">74%</div></div>
-        </div>
+        <div class="card-title">Current Key</div>
+        <div class="big" id="panelTitle">K0</div>
+        <div class="muted" id="panelSub">position 0 · system</div>
       </div>
       <div class="card">
         <div class="card-title">Diagnostics</div>
@@ -97,27 +152,9 @@
           <div class="metric"><div class="k">ESP sent</div><div class="v" id="diagEsp">-</div></div>
           <div class="metric"><div class="k">nRF stored</div><div class="v" id="diagNrf">-</div></div>
         </div>
-        <div class="muted" id="diagActive">active: -</div>
-        <div class="field">
-          <label>Direct physical-key test</label>
-          <div class="grid2">
-            <button class="btn" id="forceA">Force KC_A</button>
-            <button class="btn" id="forceB">Force KC_B</button>
-            <button class="btn" id="forceC">Force KC_C</button>
-            <button class="btn" id="forceNone">Force NONE</button>
-          </div>
-        </div>
-      </div>
-      <div class="card" id="lighting">
-        <div class="card-title">Overall Lighting</div>
-        <div class="field"><label>Indicator color</label><div class="swatches" id="indicatorSwatches"></div></div>
-        <div class="field"><label>Underglow color</label><div class="swatches" id="underglowSwatches"></div></div>
-        <div class="field"><label>Animation</label><select id="animationInput"><option value="static">Static</option><option value="rainbow">Rainbow</option><option value="snake">Snake</option><option value="splash">Splash</option><option value="breathing">Breathing</option><option value="off">Off</option></select></div>
       </div>
       <div class="card" id="editor">
         <div class="card-title">Key Remapping</div>
-        <div class="big" id="panelTitle">K0</div>
-        <div class="muted" id="panelSub">position 0 · trading</div>
         <div class="field"><label>Key label</label><input id="labelInput"></div>
         <div class="field"><label>Action type</label><select id="typeInput"><option value="broker_api">Broker API</option><option value="keycode">Keycode</option><option value="smart_home">Smart home</option><option value="layer">Layer switch</option><option value="empty">Empty</option></select></div>
         <div class="field">
@@ -126,9 +163,8 @@
           <div class="tap-row"><div class="tap">2 taps</div><input id="tap2" placeholder="KC_B"></div>
           <div class="tap-row"><div class="tap">hold</div><input id="hold" placeholder="KC_C"></div>
         </div>
-        <div class="field"><label>Per-key LED color</label><div class="swatches" id="keySwatches"></div></div>
-        <div class="switch-row"><span>Buzzer</span><input class="toggle" type="checkbox" id="buzzerInput"></div>
-        <div class="switch-row"><span>Haptic / DRV2605</span><input class="toggle" type="checkbox" id="hapticInput"></div>
+        <div class="field"><label>Per-key LED color</label><input id="keyColorInput" type="color"></div>
+        <div class="field"><label>Animation</label><select id="animationInput"><option value="static">Static</option><option value="rainbow">Rainbow</option><option value="snake">Snake</option><option value="splash">Splash</option><option value="breathing">Breathing</option><option value="off">Off</option></select></div>
         <div class="field"><label>Params JSON / command text</label><textarea id="paramsInput"></textarea></div>
       </div>
     </aside>
@@ -139,9 +175,11 @@
   </div>
 </div>
 <div class="toast" id="toast">saved</div>
+
 <script>
 const keyCount=28;
 const colors=["#ef9f27","#1d9e75","#378add","#e24b4a","#7f77dd","#ffffff","#111111"];
+const layerLabels={system:"System",smart_home:"Smart home",trading:"Trading"};
 const positions=[
   {id:0,r:1,c:2},{id:1,r:1,c:3},{id:2,r:1,c:4},{id:3,r:1,c:5},{id:4,r:1,c:6},
   {id:5,r:2,c:2},{id:6,r:2,c:3},{id:7,r:2,c:4},{id:8,r:2,c:5},{id:9,r:2,c:6},
@@ -149,49 +187,55 @@ const positions=[
   {id:16,r:4,c:1,label:"MAC"},{id:17,r:4,c:2},{id:18,r:4,c:3},{id:19,r:4,c:4},{id:20,r:4,c:5},{id:21,r:4,c:6},
   {id:22,r:5,c:1,label:"WIN"},{id:23,r:5,c:2},{id:24,r:5,c:3},{id:25,r:5,c:4},{id:26,r:5,c:5},{id:27,r:5,c:6}
 ];
-let ws,selected=0,layer="trading",remap=false,lastPhysical=null;
-let config={version:2,layer:"trading",settings:{indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},keys:[]};
+let ws,selected=0,layer="system",remap=false,lastPhysical=null,newsItems=[];
+let config={version:3,layer:"system",settings:{indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},keys:[]};
 for(let i=0;i<keyCount;i++)config.keys.push({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""});
 positions.forEach(p=>{if(p.label)config.keys[p.id].label=p.label});
 Object.assign(config.keys[0],{label:"BUY",type:"broker_api",tap1:"BUY 0.01",tap2:"BUY 0.05",hold:"ARM BUY",params:'{"symbol":"XAUUSD"}'});
 Object.assign(config.keys[1],{label:"SELL",type:"broker_api",tap1:"SELL 0.01",tap2:"SELL 0.05",hold:"ARM SELL",params:'{"symbol":"XAUUSD"}'});
+
 const pad=document.getElementById("pad");
 function keyClass(k){return k.type==="broker_api"?"trading":k.type==="layer"?"system":k.type==="smart_home"?"smart":k.type==="empty"?"empty":""}
 function shortAction(v){return (v||"-").replace(/^keycode:/,"").slice(0,13)}
 function gridColumn(c){return c===1?1:c===2?3:c+2}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function renderPad(){pad.innerHTML="";positions.forEach(p=>{const k=config.keys[p.id];const el=document.createElement("div");el.className=`key ${keyClass(k)} ${p.id===selected?"selected":""}`;el.style.gridRow=p.r;el.style.gridColumn=gridColumn(p.c);el.dataset.pos=p.id;el.innerHTML=`<div class="name">${escapeHtml(k.label||("K"+p.id))}</div><div class="acts"><div class="act">1 dot ${escapeHtml(shortAction(k.tap1))}</div><div class="act">2 dots ${escapeHtml(shortAction(k.tap2))}</div><div class="act">hold ${escapeHtml(shortAction(k.hold))}</div></div><div class="pos">${p.id}</div>`;el.onclick=()=>selectKey(p.id);pad.appendChild(el)})}
-function renderSwatches(id,value,onPick){const wrap=document.getElementById(id);wrap.innerHTML="";colors.forEach(c=>{const el=document.createElement("div");el.className="sw"+(value===c?" active":"");el.style.background=c;el.onclick=()=>{onPick(c);renderAllSwatches()};wrap.appendChild(el)})}
-function renderAllSwatches(){renderSwatches("keySwatches",config.keys[selected].color,c=>config.keys[selected].color=c);renderSwatches("indicatorSwatches",config.settings.indicatorColor,c=>config.settings.indicatorColor=c);renderSwatches("underglowSwatches",config.settings.underglowColor,c=>config.settings.underglowColor=c)}
-function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos;document.getElementById("diagSelected").textContent=pos;const k=config.keys[pos];document.getElementById("panelTitle").textContent=k.label||("K"+pos);document.getElementById("panelSub").textContent=`position ${pos} · ${layer}`;document.getElementById("labelInput").value=k.label||"";document.getElementById("typeInput").value=k.type;document.getElementById("tap1").value=k.tap1||"";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";document.getElementById("paramsInput").value=k.params||"";document.getElementById("animationInput").value=config.settings.animation||"static";document.getElementById("buzzerInput").checked=!!config.settings.buzzer;document.getElementById("hapticInput").checked=!!config.settings.haptic;renderPad();renderAllSwatches();setRemapState()}
+function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));document.getElementById("layerPill").textContent="layer: "+(layerLabels[layer]||layer).toLowerCase();document.getElementById("tftLayer").textContent=layerLabels[layer]||layer}
+function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos;document.getElementById("diagSelected").textContent=pos;const k=config.keys[pos];document.getElementById("panelTitle").textContent=k.label||("K"+pos);document.getElementById("panelSub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("labelInput").value=k.label||"";document.getElementById("typeInput").value=k.type;document.getElementById("tap1").value=k.tap1||"";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";document.getElementById("paramsInput").value=k.params||"";document.getElementById("keyColorInput").value=k.color||"#ffffff";document.getElementById("animationInput").value=config.settings.animation||"static";renderPad();setRemapState()}
 function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCase().replace(/[_\s-]/g,"");if(s==="A"||s==="KCA")return"KC_A";if(s==="B"||s==="KCB")return"KC_B";if(s==="C"||s==="KCC")return"KC_C";if(s==="NONE")return"NONE";return raw}
-function savePanel(){if(!config.keys[selected])return;const k=config.keys[selected];k.label=document.getElementById("labelInput").value;k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);document.getElementById("tap1").value=k.tap1;document.getElementById("tap2").value=k.tap2;document.getElementById("hold").value=k.hold;k.params=document.getElementById("paramsInput").value;config.settings.animation=document.getElementById("animationInput").value;config.settings.buzzer=document.getElementById("buzzerInput").checked;config.settings.haptic=document.getElementById("hapticInput").checked;renderPad()}
+function savePanel(){if(!config.keys[selected])return;const k=config.keys[selected];k.label=document.getElementById("labelInput").value;k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);k.color=document.getElementById("keyColorInput").value;document.getElementById("tap1").value=k.tap1;document.getElementById("tap2").value=k.tap2;document.getElementById("hold").value=k.hold;k.params=document.getElementById("paramsInput").value;config.settings.animation=document.getElementById("animationInput").value;config.settings.buzzer=document.getElementById("headerBuzzer").checked;config.settings.haptic=document.getElementById("headerHaptic").checked;config.settings.indicatorColor=document.getElementById("indicatorColorInput").value;config.settings.underglowColor=document.getElementById("underglowColorInput").value;config.layer=layer;renderPad()}
 function setRemapState(){document.querySelectorAll("#editor input,#editor select,#editor textarea").forEach(el=>el.disabled=!remap);document.getElementById("remapBtn").className="btn"+(remap?" active":"");document.getElementById("remapBtn").textContent=remap?"remapping on":"remapping off"}
-function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="key"){lastPhysical=msg.position;document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="diag"){if(msg.espSent)document.getElementById("diagEsp").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored;if(msg.nrfActive)document.getElementById("diagActive").textContent="active: "+msg.nrfActive}if(msg.type==="remap_ack"){document.getElementById("lastMsg").textContent=msg.line}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
-function normalizeConfig(next){next.settings=Object.assign({indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},next.settings||{});next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
+function applySettingsToControls(){document.getElementById("headerBuzzer").checked=!!config.settings.buzzer;document.getElementById("headerHaptic").checked=!!config.settings.haptic;document.getElementById("indicatorColorInput").value=config.settings.indicatorColor||"#378add";document.getElementById("underglowColorInput").value=config.settings.underglowColor||"#7f77dd"}
+
+function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"system";applySettingsToControls();updateLayerUI();selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="key"){lastPhysical=msg.position;document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="diag"){if(msg.espSent)document.getElementById("diagEsp").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
+function normalizeConfig(next){next.settings=Object.assign({indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},next.settings||{});next.layer=next.layer||"system";next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
 function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
+async function saveConfig(){savePanel();const remap=config.keys[selected]?config.keys[selected].tap1:"";const body={type:"set_config",config:config,selected:selected,remap:remap};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
 async function loadNetwork(){const res=await fetch("/api/network");const msg=await res.json();const homeConnected=!!msg.homeIp;document.getElementById("wifiMode").textContent=homeConnected?"home Wi-Fi connected":"setup AP only";document.getElementById("wifiHomeStatus").textContent=homeConnected?"connected":"not connected";document.getElementById("wifiHomeIp").textContent=homeConnected?`${msg.homeSsid} · ${msg.homeIp}`:(msg.savedSsid?`saved: ${msg.savedSsid}`:"no home Wi-Fi saved");document.getElementById("wifiApStatus").textContent=msg.apSsid||"ready";document.getElementById("wifiApIp").textContent=msg.apIp||"192.168.4.1";document.getElementById("wifiInfo").textContent=homeConnected?`${msg.hostname} works on your main Wi-Fi`:"connect to setup AP and open 192.168.4.1";document.getElementById("wifiSsid").value=msg.savedSsid||""}
 async function testWifi(ssid,password){document.getElementById("wifiTestResult").textContent="testing Wi-Fi...";const res=await fetch("/api/wifi/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("wifiTestResult").textContent=msg.ok?`test OK: ${msg.ssid} · ${msg.ip}`:(msg.message||"test failed");toast(msg.ok?"Wi-Fi OK":"Wi-Fi failed");loadNetwork().catch(()=>{})}
 async function saveWifi(ssid,password){const res=await fetch("/api/wifi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"Wi-Fi saved";toast("restarting")}
 async function rebootEsp(){const res=await fetch("/api/reboot",{method:"POST"});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"ESP restarting";toast("restarting")}
-async function saveConfig(){savePanel();const remap=config.keys[selected]?config.keys[selected].tap1:"";const body={type:"set_config",config:config,selected:selected,remap:remap};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
-async function forcePhysical(remap){if(lastPhysical===null){toast("press physical key first");document.getElementById("lastMsg").textContent="press physical key first";return}const body={position:lastPhysical,remap:remap};document.getElementById("diagEsp").textContent=`M ${lastPhysical} ${remap}`;const res=await fetch("/api/remap",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=`direct ${msg.position} ${msg.remap}`}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("direct remap sent")}
+
+async function loadOutsideWeather(){try{const url="https://api.open-meteo.com/v1/forecast?latitude=51.2217&longitude=6.7762&current=temperature_2m&timezone=Europe%2FBerlin";const res=await fetch(url);const data=await res.json();const temp=Math.round(data.current.temperature_2m);document.getElementById("tempOutside").textContent=temp+"°C";document.getElementById("tftOutside").textContent=temp+"°C"}catch{document.getElementById("tempOutside").textContent="--°C";document.getElementById("tftOutside").textContent="--°C"}}
+function fallbackNews(){const now=new Date();const at=new Date(now.getTime()+16*60*1000);return[{time:at,currency:"USD",title:"Core Retail Sales m/m",impact:"high"},{time:new Date(now.getTime()+17*60*1000),currency:"USD",title:"Retail Sales m/m",impact:"high"}]}
+async function loadNews(){try{const res=await fetch("https://nfs.faireconomy.media/ff_calendar_thisweek.json",{cache:"no-store"});const rows=await res.json();const now=new Date();newsItems=rows.map(r=>({time:new Date(r.date),currency:r.country||r.currency||"",title:r.title||r.event||"",impact:String(r.impact||"").toLowerCase()})).filter(n=>n.time>now-60*60*1000&&n.impact.includes("high")).sort((a,b)=>a.time-b.time).slice(0,4);if(!newsItems.length)newsItems=fallbackNews()}catch{newsItems=fallbackNews()}renderNews()}
+function renderNews(){const now=new Date();const list=document.getElementById("newsList");list.innerHTML="";const next=newsItems[0];if(!next){document.getElementById("nextNewsCountdown").textContent="no red news";return}newsItems.forEach(n=>{const mins=Math.max(0,Math.round((n.time-now)/60000));const soon=mins<=15;const item=document.createElement("div");item.className="news-item"+(soon?" soon":"");item.innerHTML=`<div class="news-title">${escapeHtml(n.title)}</div><div class="news-meta"><span>${escapeHtml(n.currency)} · ${n.time.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="countdown ${soon?"big-count":""}">${mins} min</span></div>`;list.appendChild(item)});const mins=Math.max(0,Math.round((next.time-now)/60000));document.getElementById("nextNewsCountdown").textContent=mins<=15?`${mins} min to red news`:`next in ${mins} min`;document.getElementById("tftNewsTime").textContent=mins+" min";document.getElementById("tftNewsTitle").textContent=`${next.currency} · ${next.title}`}
+setInterval(renderNews,30000);
 function setConn(ok){document.getElementById("conn").className="pill "+(ok?"ok":"bad");document.getElementById("conn").textContent=ok?"connected":"offline"}
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1200)}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
 document.getElementById("applyBtn").onclick=()=>saveConfig().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("save failed")});
-document.getElementById("forceA").onclick=()=>forcePhysical("KC_A").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
-document.getElementById("forceB").onclick=()=>forcePhysical("KC_B").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
-document.getElementById("forceC").onclick=()=>forcePhysical("KC_C").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
-document.getElementById("forceNone").onclick=()=>forcePhysical("NONE").catch(err=>{document.getElementById("lastMsg").textContent=err.message});
+document.getElementById("exportBtn").onclick=()=>{savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)};
+document.getElementById("remapBtn").onclick=()=>{remap=!remap;setRemapState()};
 document.getElementById("wifiTest").onclick=()=>testWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("wifiTestResult").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiSave").onclick=()=>saveWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiClear").onclick=()=>saveWifi("","").catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("rebootEsp").onclick=()=>rebootEsp().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("reboot failed")});
-document.getElementById("exportBtn").onclick=()=>{savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)};
-document.getElementById("remapBtn").onclick=()=>{remap=!remap;setRemapState()};
-document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{document.querySelectorAll("[data-layer]").forEach(x=>x.classList.remove("active"));el.classList.add("active");layer=el.dataset.layer;config.layer=layer;document.getElementById("currentLayer").textContent=el.textContent.trim();document.getElementById("layerPill").textContent="layer: "+el.textContent.trim().toLowerCase();selectKey(selected)});
-["labelInput","typeInput","tap1","tap2","hold","paramsInput","animationInput","buzzerInput","hapticInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
-renderPad();selectKey(0);connect();loadNetwork().catch(()=>{document.getElementById("wifiInfo").textContent="network info unavailable"});
+["headerBuzzer","headerHaptic","indicatorColorInput","underglowColorInput","keyColorInput","animationInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
+["labelInput","typeInput","tap1","tap2","hold","paramsInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
+document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{layer=el.dataset.layer;updateLayerUI();selectKey(selected);savePanel()});
+
+applySettingsToControls();updateLayerUI();renderPad();selectKey(0,false);connect();loadNetwork().catch(()=>{});loadOutsideWeather();loadNews();
 </script>
 </body>
 </html>
