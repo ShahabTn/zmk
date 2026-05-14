@@ -537,6 +537,14 @@ void reboot_esp() {
     restartAt = millis() + 500;
 }
 
+void request_nrf_bootloader() {
+    send_nrf_line("BOOTLOADER\n");
+    fill_segment(INDICATOR_START, INDICATOR_COUNT, CRGB::Yellow);
+    FastLED.show();
+    server.send(200, "application/json",
+                "{\"type\":\"ok\",\"message\":\"nRF bootloader command sent\"}");
+}
+
 void save_http_config() {
     String body = server.arg("plain");
 
@@ -729,6 +737,7 @@ void start_web_gui() {
     server.on("/api/wifi", HTTP_POST, save_wifi_settings);
     server.on("/api/wifi/test", HTTP_POST, test_wifi_settings);
     server.on("/api/reboot", HTTP_POST, reboot_esp);
+    server.on("/api/nrf/bootloader", HTTP_POST, request_nrf_bootloader);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);

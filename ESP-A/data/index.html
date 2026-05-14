@@ -151,6 +151,9 @@ body.dark .field input,body.dark .field select,body.dark .field textarea{backgro
             <button class="btn" id="wifiClear" type="button">clear Wi-Fi</button>
             <button class="btn" id="rebootEsp" type="button">reboot ESP</button>
           </div>
+          <div class="grid2 field">
+            <button class="btn" id="nrfBoot" type="button">nRF boot</button>
+          </div>
         </div>
       </div>
     </aside>
@@ -254,6 +257,7 @@ async function loadNetwork(){const res=await fetch("/api/network");const msg=awa
 async function testWifi(ssid,password){document.getElementById("wifiTestResult").textContent="testing Wi-Fi...";const res=await fetch("/api/wifi/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("wifiTestResult").textContent=msg.ok?`test OK: ${msg.ssid} · ${msg.ip}`:(msg.message||"test failed");toast(msg.ok?"Wi-Fi OK":"Wi-Fi failed");loadNetwork().catch(()=>{})}
 async function saveWifi(ssid,password){const res=await fetch("/api/wifi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"Wi-Fi saved";toast("restarting")}
 async function rebootEsp(){const res=await fetch("/api/reboot",{method:"POST"});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"ESP restarting";toast("restarting")}
+async function bootNrf(){const res=await fetch("/api/nrf/bootloader",{method:"POST"});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"nRF bootloader command sent";toast("nRF boot")}
 
 async function loadOutsideWeather(){try{const url="https://api.open-meteo.com/v1/forecast?latitude=51.2217&longitude=6.7762&current=temperature_2m&timezone=Europe%2FBerlin";const res=await fetch(url);const data=await res.json();const temp=Math.round(data.current.temperature_2m);document.getElementById("tempOutside").textContent=temp+"°C";document.getElementById("tftOutside").textContent=temp+"°C"}catch{document.getElementById("tempOutside").textContent="--°C";document.getElementById("tftOutside").textContent="--°C"}}
 function newsDeltaLabel(mins){if(mins<-1)return`released ${Math.abs(mins)} min ago`;if(mins<=0)return"now";return`${mins} min`}
@@ -271,6 +275,7 @@ document.getElementById("wifiTest").onclick=()=>testWifi(document.getElementById
 document.getElementById("wifiSave").onclick=()=>saveWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiClear").onclick=()=>saveWifi("","").catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("rebootEsp").onclick=()=>rebootEsp().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("reboot failed")});
+document.getElementById("nrfBoot").onclick=()=>bootNrf().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("nRF boot failed")});
 function toggleWifiDetails(){document.getElementById("wifiCompact").classList.toggle("expanded")}
 document.getElementById("wifiCompact").onclick=e=>{if(e.target.closest("input,button"))return;toggleWifiDetails()};
 document.getElementById("wifiCompact").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleWifiDetails()}};

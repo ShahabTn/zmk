@@ -5,6 +5,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,10 +15,12 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/keycode_state_changed.h>
 #include <dt-bindings/zmk/keys.h>
+#include <hal/nrf_power.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define KEY_COUNT 28
+#define NRF_UF2_BOOTLOADER_MAGIC 0x57
 
 static uint32_t remap_keycodes[KEY_COUNT];
 static char rx_buf[32];
@@ -93,6 +96,13 @@ static void send_stored_remap(unsigned int position) {
     send_esp_line(msg);
 }
 
+static void enter_uf2_bootloader(void) {
+    send_esp_line("ACK BOOTLOADER\n");
+    k_sleep(K_MSEC(100));
+    NRF_POWER->GPREGRET = NRF_UF2_BOOTLOADER_MAGIC;
+    sys_reboot(SYS_REBOOT_COLD);
+}
+
 static void handle_esp_line(char *line) {
     unsigned int position = 0;
     char key_name[12] = {0};
@@ -101,7 +111,9 @@ static void handle_esp_line(char *line) {
     snprintk(rx_ack, sizeof(rx_ack), "RX %s\n", line);
     send_esp_line(rx_ack);
 
-    if (sscanf(line, "M %u %11s", &position, key_name) == 2 && position < KEY_COUNT) {
+    if (strcmp(line, "BOOTLOADER") == 0 || strcmp(line, "DFU") == 0) {
+        enter_uf2_bootloader();
+    } else if (sscanf(line, "M %u %11s", &position, key_name) == 2 && position < KEY_COUNT) {
         uint32_t keycode = keycode_from_name(key_name);
         remap_keycodes[position] = keycode;
         LOG_INF("ESP remap position %u to %s", position, key_name);
