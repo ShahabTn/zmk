@@ -63,7 +63,10 @@
           <button class="btn" id="wifiTest">test Wi-Fi</button>
           <button class="btn primary" id="wifiSave">save Wi-Fi</button>
         </div>
-        <div class="field"><button class="btn" id="wifiClear">clear saved Wi-Fi</button></div>
+        <div class="grid2 field">
+          <button class="btn" id="wifiClear">clear Wi-Fi</button>
+          <button class="btn" id="rebootEsp">reboot ESP</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">Power</div>
@@ -169,6 +172,7 @@ function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return
 async function loadNetwork(){const res=await fetch("/api/network");const msg=await res.json();const homeConnected=!!msg.homeIp;document.getElementById("wifiMode").textContent=homeConnected?"home Wi-Fi connected":"setup AP only";document.getElementById("wifiHomeStatus").textContent=homeConnected?"connected":"not connected";document.getElementById("wifiHomeIp").textContent=homeConnected?`${msg.homeSsid} · ${msg.homeIp}`:(msg.savedSsid?`saved: ${msg.savedSsid}`:"no home Wi-Fi saved");document.getElementById("wifiApStatus").textContent=msg.apSsid||"ready";document.getElementById("wifiApIp").textContent=msg.apIp||"192.168.4.1";document.getElementById("wifiInfo").textContent=homeConnected?`${msg.hostname} works on your main Wi-Fi`:"connect to setup AP and open 192.168.4.1";document.getElementById("wifiSsid").value=msg.savedSsid||""}
 async function testWifi(ssid,password){document.getElementById("wifiTestResult").textContent="testing Wi-Fi...";const res=await fetch("/api/wifi/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("wifiTestResult").textContent=msg.ok?`test OK: ${msg.ssid} · ${msg.ip}`:(msg.message||"test failed");toast(msg.ok?"Wi-Fi OK":"Wi-Fi failed");loadNetwork().catch(()=>{})}
 async function saveWifi(ssid,password){const res=await fetch("/api/wifi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"Wi-Fi saved";toast("restarting")}
+async function rebootEsp(){const res=await fetch("/api/reboot",{method:"POST"});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"ESP restarting";toast("restarting")}
 async function saveConfig(){savePanel();const remap=config.keys[selected]?config.keys[selected].tap1:"";const body={type:"set_config",config:config,selected:selected,remap:remap};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
 async function forcePhysical(remap){if(lastPhysical===null){toast("press physical key first");document.getElementById("lastMsg").textContent="press physical key first";return}const body={position:lastPhysical,remap:remap};document.getElementById("diagEsp").textContent=`M ${lastPhysical} ${remap}`;const res=await fetch("/api/remap",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=`direct ${msg.position} ${msg.remap}`}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("direct remap sent")}
 function setConn(ok){document.getElementById("conn").className="pill "+(ok?"ok":"bad");document.getElementById("conn").textContent=ok?"connected":"offline"}
@@ -182,6 +186,7 @@ document.getElementById("forceNone").onclick=()=>forcePhysical("NONE").catch(err
 document.getElementById("wifiTest").onclick=()=>testWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("wifiTestResult").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiSave").onclick=()=>saveWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiClear").onclick=()=>saveWifi("","").catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
+document.getElementById("rebootEsp").onclick=()=>rebootEsp().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("reboot failed")});
 document.getElementById("exportBtn").onclick=()=>{savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)};
 document.getElementById("remapBtn").onclick=()=>{remap=!remap;setRemapState()};
 document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{document.querySelectorAll("[data-layer]").forEach(x=>x.classList.remove("active"));el.classList.add("active");layer=el.dataset.layer;config.layer=layer;document.getElementById("currentLayer").textContent=el.textContent.trim();document.getElementById("layerPill").textContent="layer: "+el.textContent.trim().toLowerCase();selectKey(selected)});

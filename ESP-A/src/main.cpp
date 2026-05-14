@@ -406,6 +406,11 @@ void test_wifi_settings() {
     }
 }
 
+void reboot_esp() {
+    server.send(200, "application/json", "{\"type\":\"ok\",\"message\":\"ESP restarting\"}");
+    restartAt = millis() + 500;
+}
+
 void save_http_config() {
     String body = server.arg("plain");
 
@@ -592,6 +597,7 @@ void start_web_gui() {
     server.on("/api/network", HTTP_GET, send_network_info);
     server.on("/api/wifi", HTTP_POST, save_wifi_settings);
     server.on("/api/wifi/test", HTTP_POST, test_wifi_settings);
+    server.on("/api/reboot", HTTP_POST, reboot_esp);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
