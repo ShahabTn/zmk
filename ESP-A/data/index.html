@@ -46,6 +46,11 @@ body.dark .card,body.dark .news-card,body.dark .metric{background:#1b2026;border
 .metric .k{font-size:11px;color:#777}.metric .v{font-size:16px;font-weight:850;margin-top:3px;overflow:hidden;text-overflow:ellipsis}.metric .muted{font-size:11px}
 .sensor-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.sensor-value{font-size:16px;font-weight:850;white-space:nowrap}.sensor-label{font-size:10px;color:#777}
 .battery-level.ok{color:#1d9e75}.battery-level.warn{color:#d89a13}.battery-level.low{color:#c62828}
+.battery-box{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.battery-icon{width:58px;height:28px;border:3px solid currentColor;border-radius:7px;padding:3px;position:relative;color:#1d9e75;flex:0 0 auto}
+.battery-icon:after{content:"";position:absolute;right:-8px;top:7px;width:5px;height:10px;border-radius:0 3px 3px 0;background:currentColor}
+.battery-fill{height:100%;width:74%;border-radius:3px;background:currentColor;transition:.2s}
+.battery-icon.warn{color:#d89a13}.battery-icon.low{color:#c62828}
 .status-card{width:100%;text-align:left;cursor:pointer;transition:.15s}
 .status-card:hover{border-color:#378add;box-shadow:0 6px 16px rgba(55,138,221,.12);transform:translateY(-1px)}
 .status-line{display:flex;align-items:center;gap:9px;font-weight:850;font-size:20px}
@@ -114,7 +119,7 @@ body.dark .field input,body.dark .field select,body.dark .field textarea{backgro
         <div class="grid2 sensor-grid">
           <div class="metric"><div class="k">temperature</div><div class="sensor-pair"><div><div class="sensor-label">inside</div><div class="sensor-value" id="tempInside">24.1°C</div></div><div><div class="sensor-label">outside</div><div class="sensor-value" id="tempOutside">--°C</div><div class="muted" id="outsideCity">Düsseldorf</div></div></div></div>
           <div class="metric"><div class="k">measurement</div><div class="sensor-pair"><div><div class="sensor-label">voltage</div><div class="sensor-value">3.92V</div></div><div><div class="sensor-label">current</div><div class="sensor-value">142mA</div></div></div></div>
-          <div class="metric"><div class="k">power</div><div class="v battery-level ok" id="batteryLevel">74%</div><div class="muted">battery level</div></div>
+          <div class="metric"><div class="k">power</div><div class="battery-box"><div><div class="v battery-level ok" id="batteryLevel">74%</div><div class="muted">battery level</div></div><div class="battery-icon ok" id="batteryIcon"><div class="battery-fill" id="batteryFill"></div></div></div></div>
           <div class="metric"><div class="k">secure</div><div class="v" id="secureStatus">ready</div><div class="muted">secure element</div></div>
         </div>
       </div>
@@ -249,7 +254,7 @@ async function loadNews(){try{newsError=false;const res=await fetch("https://nfs
 function renderNews(){const now=new Date();const list=document.getElementById("newsList");list.innerHTML="";const sorted=[...newsItems].sort((a,b)=>Math.abs(a.time-now)-Math.abs(b.time-now));const next=sorted[0];if(!next){document.getElementById("nextNewsCountdown").textContent=newsError?"news unavailable":"no red news";document.getElementById("tftNewsTime").textContent="--";document.getElementById("tftNewsTitle").textContent=newsError?"News unavailable":"No red news";return}sorted.forEach(n=>{const mins=Math.round((n.time-now)/60000);const soon=mins>=0&&mins<=15;const item=document.createElement("div");item.className="news-item"+(soon?" soon":"");item.innerHTML=`<div class="news-title">${escapeHtml(n.title)}</div><div class="news-meta"><span>${escapeHtml(n.currency)} · ${n.time.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="countdown ${soon?"big-count":""}">${newsDeltaLabel(mins)}</span></div>`;list.appendChild(item)});const mins=Math.round((next.time-now)/60000);document.getElementById("nextNewsCountdown").textContent=mins<0?newsDeltaLabel(mins):`${newsDeltaLabel(mins)} to red news`;document.getElementById("tftNewsTime").textContent=newsDeltaLabel(mins);document.getElementById("tftNewsTitle").textContent=`${next.currency} · ${next.title}`}
 setInterval(renderNews,30000);
 function setConn(ok){document.getElementById("conn").className="pill "+(ok?"ok":"bad");document.getElementById("conn").textContent=ok?"connected":"offline"}
-function setBatteryLevel(pct){const level=document.getElementById("batteryLevel");const cls=pct<=20?"low":pct<=40?"warn":"ok";level.className="v battery-level "+cls;level.textContent=pct+"%";document.getElementById("tftBattery").textContent=pct+"%"}
+function setBatteryLevel(pct){const level=document.getElementById("batteryLevel");const icon=document.getElementById("batteryIcon");const fill=document.getElementById("batteryFill");const cls=pct<=20?"low":pct<=40?"warn":"ok";level.className="v battery-level "+cls;icon.className="battery-icon "+cls;fill.style.width=Math.max(5,Math.min(100,pct))+"%";level.textContent=pct+"%";document.getElementById("tftBattery").textContent=pct+"%"}
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1200)}
 
 document.getElementById("applyBtn").onclick=()=>saveConfig().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("save failed")});
