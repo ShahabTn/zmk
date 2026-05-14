@@ -1,5 +1,5 @@
 include:
   - board: nice_nano_v2
-    shield: force_ble_left
+    shield: force_ble_a
   - board: nice_nano_v2
-    shield: force_ble_right
+    shield: force_ble_b

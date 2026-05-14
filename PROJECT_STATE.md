@@ -8,9 +8,9 @@ This file is the recovery note for moving to a new laptop. The source of truth i
 
 - `ESP-A/`: Side-A ESP32-S3 firmware. Handles LEDs, sensors, Wi-Fi GUI, and UART link to Side-A nRF52840.
 - `ESP-B/`: Side-B ESP32-S3 bring-up firmware. Handles TFT pins, 16 WS2812 LEDs, sensors, nRF24L01 pins, and UART/I2C links to Side-B nRF52840.
-- `boards/shields/zmk/force_ble_left.*`: Side-A ZMK shield/keymap.
-- `boards/shields/zmk/force_ble_right.*`: Side-B ZMK shield/keymap. Side-B currently has no switches.
-- `build.yaml`: Builds both `force_ble_left` and `force_ble_right`.
+- `boards/shields/zmk/force_ble_a.*`: Side-A ZMK shield/keymap. This is the switch matrix side.
+- `boards/shields/zmk/force_ble_b.*`: Side-B ZMK shield/keymap. This is the TFT side and currently has no switches.
+- `build.yaml`: Builds both `force_ble_a` and `force_ble_b`.
 
 ## Current Status
 

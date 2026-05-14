@@ -7,7 +7,7 @@
 
     /*
      * Side-B has no switches. Keep a mock kscan so the peripheral firmware
-     * builds cleanly while the right half participates in ZMK split BLE.
+     * builds cleanly while Side-B participates in ZMK split BLE.
      */
     kscan0: kscan_0 {
         compatible = "zmk,kscan-mock";

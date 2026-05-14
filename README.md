@@ -19,6 +19,8 @@ ZMK runs on the nRF52840 modules. The ESP32-S3 modules run separate PlatformIO/A
 ## Repository Layout
 
 - `boards/shields/zmk/`: ZMK shield overlays and keymaps for the split macropad.
+- `boards/shields/zmk/force_ble_a.*`: Side-A nRF firmware, the switch matrix side.
+- `boards/shields/zmk/force_ble_b.*`: Side-B nRF firmware, the TFT/no-switch side.
 - `ESP-A/`: ESP32-S3 firmware for Side-A.
 - `ESP-B/`: ESP32-S3 firmware for Side-B.
 - `config/`: ZMK config files used by GitHub Actions builds.
