@@ -33,6 +33,13 @@ body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;b
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .metric{background:#fff;border:1px solid #e0dfda;border-radius:10px;padding:10px;min-width:0}
 .metric .k{font-size:12px;color:#777}.metric .v{font-size:18px;font-weight:850;margin-top:3px;overflow:hidden;text-overflow:ellipsis}
+.status-card{width:100%;text-align:left;cursor:pointer;transition:.15s}
+.status-card:hover{border-color:#378add;box-shadow:0 6px 16px rgba(55,138,221,.12);transform:translateY(-1px)}
+.status-line{display:flex;align-items:center;gap:9px;font-weight:850;font-size:20px}
+.status-dot{width:12px;height:12px;border-radius:50%;background:#c7c7c2;box-shadow:0 0 0 4px rgba(199,199,194,.18);flex:0 0 auto}
+.status-dot.ok{background:#1d9e75;box-shadow:0 0 0 4px rgba(29,158,117,.18)}
+.status-dot.warn{background:#ef9f27;box-shadow:0 0 0 4px rgba(239,159,39,.18)}
+.status-card .muted{margin-top:6px}
 .pad-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;padding-top:2px}
 .tft{width:min(455px,70vw);aspect-ratio:4/3;background:#050505;border:5px solid #202020;border-radius:4px;box-shadow:0 10px 24px rgba(0,0,0,.2);color:#f5f5f5;padding:16px;display:grid;grid-template-rows:auto 1fr auto;gap:11px}
 .tft-top{display:flex;align-items:center;justify-content:space-between;color:#9fd0ff;font-weight:750}.tft-layer{font-size:25px;font-weight:900}.tft-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -55,6 +62,12 @@ body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;b
 .news-title{font-weight:850}.news-meta{display:flex;justify-content:space-between;gap:8px;color:#666;font-size:13px;margin-top:5px}.countdown{font-weight:850;color:#b71c1c}.countdown.big-count{font-size:23px;display:block;margin-top:6px}
 .bottom{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid #d6d5d0;color:#666;font-size:13px}
 .toast{position:fixed;right:18px;bottom:48px;background:#1b5e20;color:#fff;border-radius:9px;padding:10px 13px;opacity:0;transform:translateY(8px);transition:.18s}.toast.show{opacity:1;transform:none}
+.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(20,24,28,.42);z-index:20}
+.modal-backdrop.show{display:flex}
+.modal{width:min(560px,calc(100vw - 32px));max-height:88vh;overflow:auto;background:#fbfbf8;border:1px solid #d6d6d0;border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.28);padding:16px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.modal-head .big{font-size:24px}
+.icon-btn{border:1px solid #d6d6d0;background:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:22px;line-height:1}
 @media(max-width:1150px){.body{grid-template-columns:1fr}.side{order:2}.panel{order:3;border-left:0;border-top:1px solid #d9dcd5}.main{order:1}.pad{transform:scale(.86);transform-origin:top center}}
 </style>
 </head>
@@ -94,26 +107,11 @@ body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;b
           <div class="metric"><div class="k">secure</div><div class="v" id="secureStatus">ready</div><div class="muted">secure element</div></div>
         </div>
       </div>
-      <div class="card">
+      <button class="card status-card" id="wifiCompact" type="button">
         <div class="card-title">Wi-Fi</div>
-        <div class="big" id="wifiMode">loading</div>
-        <div class="grid2">
-          <div class="metric"><div class="k">home</div><div class="v" id="wifiHomeStatus">checking</div><div class="muted" id="wifiHomeIp">-</div></div>
-          <div class="metric"><div class="k">setup AP</div><div class="v" id="wifiApStatus">ready</div><div class="muted" id="wifiApIp">192.168.4.1</div></div>
-        </div>
-        <div class="muted" id="wifiInfo">macropad.local</div>
-        <div class="muted" id="wifiTestResult">test before saving new credentials</div>
-        <div class="field"><label>Home Wi-Fi SSID</label><input id="wifiSsid" placeholder="your router name"></div>
-        <div class="field"><label>Password</label><input id="wifiPassword" type="password" placeholder="saved only on ESP32"></div>
-        <div class="grid2 field">
-          <button class="btn" id="wifiTest">test Wi-Fi</button>
-          <button class="btn primary" id="wifiSave">save Wi-Fi</button>
-        </div>
-        <div class="grid2 field">
-          <button class="btn" id="wifiClear">clear Wi-Fi</button>
-          <button class="btn" id="rebootEsp">reboot ESP</button>
-        </div>
-      </div>
+        <div class="status-line"><span class="status-dot" id="wifiCompactDot"></span><span id="wifiCompactStatus">checking</span></div>
+        <div class="muted" id="wifiCompactDetail">open Wi-Fi settings</div>
+      </button>
     </aside>
 
     <main class="main">
@@ -174,6 +172,33 @@ body{margin:0;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;b
     <span id="lastMsg">waiting for macropad.local</span>
   </div>
 </div>
+<div class="modal-backdrop" id="wifiModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="card-title">Wi-Fi Settings</div>
+        <div class="big" id="wifiMode">loading</div>
+      </div>
+      <button class="icon-btn" id="wifiClose" type="button" aria-label="Close Wi-Fi settings">&times;</button>
+    </div>
+    <div class="grid2">
+      <div class="metric"><div class="k">home</div><div class="v" id="wifiHomeStatus">checking</div><div class="muted" id="wifiHomeIp">-</div></div>
+      <div class="metric"><div class="k">setup AP</div><div class="v" id="wifiApStatus">ready</div><div class="muted" id="wifiApIp">192.168.4.1</div></div>
+    </div>
+    <div class="muted" id="wifiInfo">macropad.local</div>
+    <div class="muted" id="wifiTestResult">test before saving new credentials</div>
+    <div class="field"><label>Home Wi-Fi SSID</label><input id="wifiSsid" placeholder="your router name"></div>
+    <div class="field"><label>Password</label><input id="wifiPassword" type="password" placeholder="saved only on ESP32"></div>
+    <div class="grid2 field">
+      <button class="btn" id="wifiTest">test Wi-Fi</button>
+      <button class="btn primary" id="wifiSave">save Wi-Fi</button>
+    </div>
+    <div class="grid2 field">
+      <button class="btn" id="wifiClear">clear Wi-Fi</button>
+      <button class="btn" id="rebootEsp">reboot ESP</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast">saved</div>
 
 <script>
@@ -211,7 +236,7 @@ function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=(
 function normalizeConfig(next){next.settings=Object.assign({indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false},next.settings||{});next.layer=next.layer||"system";next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"keycode",color:colors[i%colors.length],tap1:"KC_A",tap2:"KC_B",hold:"KC_C",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
 function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
 async function saveConfig(){savePanel();const remap=config.keys[selected]?config.keys[selected].tap1:"";const body={type:"set_config",config:config,selected:selected,remap:remap};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
-async function loadNetwork(){const res=await fetch("/api/network");const msg=await res.json();const homeConnected=!!msg.homeIp;document.getElementById("wifiMode").textContent=homeConnected?"home Wi-Fi connected":"setup AP only";document.getElementById("wifiHomeStatus").textContent=homeConnected?"connected":"not connected";document.getElementById("wifiHomeIp").textContent=homeConnected?`${msg.homeSsid} · ${msg.homeIp}`:(msg.savedSsid?`saved: ${msg.savedSsid}`:"no home Wi-Fi saved");document.getElementById("wifiApStatus").textContent=msg.apSsid||"ready";document.getElementById("wifiApIp").textContent=msg.apIp||"192.168.4.1";document.getElementById("wifiInfo").textContent=homeConnected?`${msg.hostname} works on your main Wi-Fi`:"connect to setup AP and open 192.168.4.1";document.getElementById("wifiSsid").value=msg.savedSsid||""}
+async function loadNetwork(){const res=await fetch("/api/network");const msg=await res.json();const homeConnected=!!msg.homeIp;const dot=document.getElementById("wifiCompactDot");dot.className="status-dot "+(homeConnected?"ok":"warn");document.getElementById("wifiCompactStatus").textContent=homeConnected?"status: connected":"status: setup AP";document.getElementById("wifiCompactDetail").textContent=homeConnected?`${msg.homeSsid} · ${msg.homeIp}`:`${msg.apSsid||"ZMK-BLE-Macropad"} · ${msg.apIp||"192.168.4.1"}`;document.getElementById("wifiMode").textContent=homeConnected?"home Wi-Fi connected":"setup AP only";document.getElementById("wifiHomeStatus").textContent=homeConnected?"connected":"not connected";document.getElementById("wifiHomeIp").textContent=homeConnected?`${msg.homeSsid} · ${msg.homeIp}`:(msg.savedSsid?`saved: ${msg.savedSsid}`:"no home Wi-Fi saved");document.getElementById("wifiApStatus").textContent=msg.apSsid||"ready";document.getElementById("wifiApIp").textContent=msg.apIp||"192.168.4.1";document.getElementById("wifiInfo").textContent=homeConnected?`${msg.hostname} works on your main Wi-Fi`:"connect to setup AP and open 192.168.4.1";document.getElementById("wifiSsid").value=msg.savedSsid||""}
 async function testWifi(ssid,password){document.getElementById("wifiTestResult").textContent="testing Wi-Fi...";const res=await fetch("/api/wifi/test",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("wifiTestResult").textContent=msg.ok?`test OK: ${msg.ssid} · ${msg.ip}`:(msg.message||"test failed");toast(msg.ok?"Wi-Fi OK":"Wi-Fi failed");loadNetwork().catch(()=>{})}
 async function saveWifi(ssid,password){const res=await fetch("/api/wifi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ssid,password})});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"Wi-Fi saved";toast("restarting")}
 async function rebootEsp(){const res=await fetch("/api/reboot",{method:"POST"});const msg=await res.json();document.getElementById("lastMsg").textContent=msg.message||"ESP restarting";toast("restarting")}
@@ -231,6 +256,9 @@ document.getElementById("wifiTest").onclick=()=>testWifi(document.getElementById
 document.getElementById("wifiSave").onclick=()=>saveWifi(document.getElementById("wifiSsid").value,document.getElementById("wifiPassword").value).catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("wifiClear").onclick=()=>saveWifi("","").catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("Wi-Fi failed")});
 document.getElementById("rebootEsp").onclick=()=>rebootEsp().catch(err=>{document.getElementById("lastMsg").textContent=err.message;toast("reboot failed")});
+document.getElementById("wifiCompact").onclick=()=>document.getElementById("wifiModal").classList.add("show");
+document.getElementById("wifiClose").onclick=()=>document.getElementById("wifiModal").classList.remove("show");
+document.getElementById("wifiModal").onclick=e=>{if(e.target.id==="wifiModal")e.currentTarget.classList.remove("show")};
 ["headerBuzzer","headerHaptic","indicatorColorInput","underglowColorInput","keyColorInput","animationInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
 ["labelInput","typeInput","tap1","tap2","hold","paramsInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
 document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{layer=el.dataset.layer;updateLayerUI();selectKey(selected);savePanel()});
