@@ -37,6 +37,7 @@ constexpr char WIFI_SSID[] = "";
 constexpr char WIFI_PASSWORD[] = "";
 constexpr char AP_SSID[] = "ZMK-BLE-Macropad";
 constexpr char AP_PASSWORD[] = "12345678";
+constexpr uint8_t WIFI_CONNECT_TRIES = 24;
 constexpr char DEFAULT_CONFIG[] =
     "{\"version\":1,\"layer\":\"trading\",\"keys\":[{\"id\":0,\"label\":\"BUY\","
     "\"type\":\"broker_api\",\"color\":\"#ef9f27\",\"tap1\":\"BUY 0.01 XAUUSD\","
@@ -66,6 +67,12 @@ uint32_t remapAckDeadline;
 String lastEspRemapCommand = "-";
 String lastNrfStoredRemap = "-";
 uint32_t restartAt;
+String wifiSsid;
+String wifiPassword;
+
+String get_preference_string(const char *key, const char *fallback = "") {
+    return preferences.isKey(key) ? preferences.getString(key, fallback) : String(fallback);
+}
 
 void fill_segment(uint8_t start, uint8_t count, const CRGB &color) {
     for (uint8_t i = 0; i < count; i++) {
@@ -285,16 +292,16 @@ String json_escape(const String &value) {
 
 void send_network_info() {
     bool connected = WiFi.status() == WL_CONNECTED;
-    String mode = connected ? "sta" : "ap";
-    String ssid = connected ? WiFi.SSID() : AP_SSID;
-    String ip = connected ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
-    String savedSsid = preferences.getString("wifi_ssid", "");
+    String mode = connected ? "ap_sta" : "ap";
+    String savedSsid = get_preference_string("wifi_ssid");
 
     server.send(200, "application/json",
-                "{\"type\":\"network\",\"mode\":\"" + mode + "\",\"ssid\":\"" +
-                    json_escape(ssid) + "\",\"savedSsid\":\"" + json_escape(savedSsid) +
-                    "\",\"ip\":\"" + ip + "\",\"hostname\":\"" + String(MDNS_NAME) +
-                    ".local\"}");
+                "{\"type\":\"network\",\"mode\":\"" + mode + "\",\"apSsid\":\"" +
+                    String(AP_SSID) + "\",\"apIp\":\"" + WiFi.softAPIP().toString() +
+                    "\",\"homeSsid\":\"" + json_escape(connected ? WiFi.SSID() : savedSsid) +
+                    "\",\"savedSsid\":\"" + json_escape(savedSsid) + "\",\"homeIp\":\"" +
+                    (connected ? WiFi.localIP().toString() : "") + "\",\"hostname\":\"" +
+                    String(MDNS_NAME) + ".local\"}");
 }
 
 void save_wifi_settings() {
@@ -454,31 +461,33 @@ void on_websocket_event(uint8_t client, WStype_t type, uint8_t *payload, size_t 
 }
 
 void start_network() {
-    String ssid = preferences.getString("wifi_ssid", WIFI_SSID);
-    String password = preferences.getString("wifi_password", WIFI_PASSWORD);
+    wifiSsid = get_preference_string("wifi_ssid", WIFI_SSID);
+    wifiPassword = get_preference_string("wifi_password", WIFI_PASSWORD);
 
     WiFi.persistent(false);
     WiFi.setHostname(MDNS_NAME);
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAP(AP_SSID, AP_PASSWORD);
+    Serial.printf("Wi-Fi setup AP: %s / %s\n", AP_SSID, AP_PASSWORD);
+    Serial.printf("AP IP: %s\n", WiFi.softAPIP().toString().c_str());
 
-    if (ssid.length() > 0) {
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(ssid.c_str(), password.c_str());
+    if (wifiSsid.length() > 0) {
+        WiFi.begin(wifiSsid.c_str(), wifiPassword.c_str());
 
-        Serial.printf("Connecting to Wi-Fi SSID %s", ssid.c_str());
-        for (uint8_t i = 0; i < 30 && WiFi.status() != WL_CONNECTED; i++) {
+        Serial.printf("Connecting to home Wi-Fi SSID %s", wifiSsid.c_str());
+        for (uint8_t i = 0; i < WIFI_CONNECT_TRIES && WiFi.status() != WL_CONNECTED; i++) {
             delay(250);
             Serial.print(".");
         }
         Serial.println();
-    }
 
-    if (WiFi.status() != WL_CONNECTED) {
-        WiFi.mode(WIFI_AP);
-        WiFi.softAP(AP_SSID, AP_PASSWORD);
-        Serial.printf("Wi-Fi AP started: %s / %s\n", AP_SSID, AP_PASSWORD);
-        Serial.printf("AP IP: %s\n", WiFi.softAPIP().toString().c_str());
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.printf("Home Wi-Fi connected: %s\n", WiFi.localIP().toString().c_str());
+        } else {
+            Serial.println("Home Wi-Fi not connected; setup AP remains available");
+        }
     } else {
-        Serial.printf("Wi-Fi connected: %s\n", WiFi.localIP().toString().c_str());
+        Serial.println("No saved home Wi-Fi; setup AP remains available");
     }
 
     if (MDNS.begin(MDNS_NAME)) {
