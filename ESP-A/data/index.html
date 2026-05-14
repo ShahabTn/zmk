@@ -13,17 +13,18 @@ body.dark{background:#111417;color:#eceff2}
 body.dark .top{background:#171c21;border-color:#2a3036}
 .brand{font-size:18px;font-weight:800}.brand span{color:#378add}
 .top-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.pill{border:1px solid #d6d6d0;border-radius:999px;padding:6px 10px;background:#f5f5f4;color:#555;font-size:12px}
+.pill{border:1px solid #d6d6d0;border-radius:999px;padding:6px 10px;background:#f5f5f4;color:#555;font-size:15px}
 .pill.ok{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7}.pill.bad{background:#fdeaea;color:#8a1f1f;border-color:#f1b3b3}
-.btn{border:1px solid #c9c9c3;border-radius:8px;background:#fff;padding:7px 10px;cursor:pointer;font:inherit}
+.btn{border:1px solid #c9c9c3;border-radius:8px;background:#fff;padding:7px 10px;cursor:pointer;font:inherit;font-size:15px}
 .btn.primary{background:#378add;border-color:#378add;color:#fff}.btn.active{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-.switch-tool{display:flex;align-items:center;gap:6px;border:1px solid #d1d5cc;border-radius:999px;padding:4px 7px;background:#f8faf6;color:#333;font-size:12px}
+.switch-tool{display:flex;align-items:center;gap:6px;border:1px solid #d1d5cc;border-radius:999px;padding:4px 7px;background:#f8faf6;color:#333;font-size:15px}
 .switch-tool input{position:absolute;opacity:0;pointer-events:none}
 .switch-slider{width:38px;height:22px;border-radius:999px;background:#cfd2ce;position:relative;display:inline-block;transition:.15s}
 .switch-slider:before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;left:2px;top:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:.15s}
 .switch-tool input:checked+.switch-slider{background:#378add}
 .switch-tool input:checked+.switch-slider:before{left:18px}
-.color-tool{display:flex;align-items:center;gap:6px;border:1px solid #d1d5cc;border-radius:999px;padding:4px 7px;background:#f8faf6;font-size:12px}
+.color-tool{display:flex;align-items:center;gap:6px;border:1px solid #d1d5cc;border-radius:999px;padding:4px 7px;background:#f8faf6;color:#333;font-size:15px}
+body.dark .switch-tool,body.dark .color-tool,body.dark .btn,body.dark .pill{color:#171717}
 .color-tool input{width:24px;height:24px;border:0;border-radius:50%;background:transparent;padding:0;overflow:hidden}
 .color-tool input::-webkit-color-swatch-wrapper{padding:0}.color-tool input::-webkit-color-swatch{border:0;border-radius:50%}
 .body{min-height:0;flex:1;display:grid;grid-template-columns:255px minmax(650px,1fr) 330px}
@@ -58,16 +59,15 @@ body.dark .card,body.dark .news-card,body.dark .metric{background:#1b2026;border
 .tft-top{display:flex;align-items:center;justify-content:space-between;color:#9fd0ff;font-weight:750}.tft-layer{font-size:25px;font-weight:900}.tft-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tft-tile{border:1px solid #30363d;border-radius:7px;padding:7px;background:#111820;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.tft-tile .k{font-size:9px;color:#9aa4ad}.tft-tile .v{font-size:15px;font-weight:850;margin-top:2px}
 .tft-news{border-left:4px solid #e24b4a;padding-left:7px;color:#ffd5d5;font-weight:750;font-size:11px}
-.pad{background:#fff;border:1px solid #cfcfca;border-radius:16px;padding:12px;display:grid;grid-template-columns:112px 16px 54px 16px 54px 16px repeat(4,54px);grid-template-rows:repeat(5,54px);column-gap:7px;row-gap:7px}
+.pad{background:#fff;border:1px solid #cfcfca;border-radius:16px;padding:14px;display:grid;grid-template-columns:144px 18px 64px 18px 64px 18px repeat(4,64px);grid-template-rows:repeat(5,64px);column-gap:8px;row-gap:8px}
 body.dark .pad{background:#1b2026;border-color:#303740}
-.pcb-blank{grid-row:1/6;grid-column:1;border:1px dashed #d7d7d0;border-radius:12px;background:linear-gradient(135deg,#f3f5f1,#ecefea);display:flex;align-items:center;justify-content:center;text-align:center;color:#8a8a82;font-size:12px;line-height:1.25;padding:12px}
-body.dark .pcb-blank{background:linear-gradient(135deg,#20262d,#161b20);border-color:#39424c;color:#717b85}
-.key{border:1px solid #d2d2cc;border-radius:9px;background:#f5f5f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;user-select:none;min-width:54px;min-height:54px;transition:.15s}
+.pcb-blank{grid-row:1/6;grid-column:1}
+.key{border:1px solid #d2d2cc;border-radius:9px;background:#f5f5f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;user-select:none;min-width:64px;min-height:64px;transition:.15s}
 .key:hover{border-color:#378add;transform:translateY(-1px)}.key.selected{border:2px solid #378add;background:#e6f1fb}
 .key.trading{border-color:#ef9f27;background:#faeeda}.key.system{border-color:#7f77dd;background:#eeedfe}.key.smart{border-color:#1d9e75;background:#e1f5ee}.key.empty{opacity:.3;border-style:dashed}
 body.dark .key{background:#20262d;border-color:#3a424a;color:#eceff2}body.dark .key.trading{background:#322818}body.dark .key.system{background:#24233b}body.dark .key.smart{background:#183027}
-.key .name{font-size:12px;font-weight:850;line-height:1}.key .pos{font-size:8px;color:#777}
-.acts{display:flex;flex-direction:column;gap:1px;width:92%;font-size:7px;color:#444;line-height:1.05}.act{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.58);border-radius:4px;padding:1px 2px}
+.key .name{font-size:14px;font-weight:850;line-height:1}.key .pos{font-size:9px;color:#777}
+.acts{display:flex;flex-direction:column;gap:1px;width:92%;font-size:8px;color:#444;line-height:1.05}.act{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.58);border-radius:4px;padding:1px 2px}
 .field{margin-top:11px}.field label{display:block;color:#555;font-size:13px;margin-bottom:5px;font-weight:650}
 .field input,.field select,.field textarea{width:100%;border:1px solid #d6d6d0;border-radius:9px;background:#fff;padding:9px;font:inherit}
 body.dark .field input,body.dark .field select,body.dark .field textarea{background:#11161b;border-color:#303740;color:#eceff2}
@@ -156,7 +156,7 @@ body.dark .field input,body.dark .field select,body.dark .field textarea{backgro
           </div>
           <div class="tft-news" id="tftNewsTitle">Waiting for important news</div>
         </div>
-        <div class="pad" id="pad"><div class="pcb-blank">ESP32<br>nRF52840<br>electronics</div></div>
+        <div class="pad" id="pad"><div class="pcb-blank"></div></div>
       </div>
     </main>
 
@@ -225,7 +225,7 @@ function keyClass(k){return k.type==="broker_api"?"trading":k.type==="layer"?"sy
 function shortAction(v){return (v||"-").replace(/^keycode:/,"").slice(0,13)}
 function gridColumn(c){return c===1?3:c===2?5:c+4}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function renderPad(){pad.innerHTML='<div class="pcb-blank">ESP32<br>nRF52840<br>electronics</div>';positions.forEach(p=>{const k=config.keys[p.id];const el=document.createElement("div");el.className=`key ${keyClass(k)} ${p.id===selected?"selected":""}`;el.style.gridRow=p.r;el.style.gridColumn=gridColumn(p.c);el.dataset.pos=p.id;el.innerHTML=`<div class="name">${escapeHtml(k.label||("K"+p.id))}</div><div class="acts"><div class="act">1 dot ${escapeHtml(shortAction(k.tap1))}</div><div class="act">2 dots ${escapeHtml(shortAction(k.tap2))}</div><div class="act">hold ${escapeHtml(shortAction(k.hold))}</div></div><div class="pos">${p.id}</div>`;el.onclick=()=>selectKey(p.id);pad.appendChild(el)})}
+function renderPad(){pad.innerHTML='<div class="pcb-blank"></div>';positions.forEach(p=>{const k=config.keys[p.id];const el=document.createElement("div");el.className=`key ${keyClass(k)} ${p.id===selected?"selected":""}`;el.style.gridRow=p.r;el.style.gridColumn=gridColumn(p.c);el.dataset.pos=p.id;el.innerHTML=`<div class="name">${escapeHtml(k.label||("K"+p.id))}</div><div class="acts"><div class="act">1 dot ${escapeHtml(shortAction(k.tap1))}</div><div class="act">2 dots ${escapeHtml(shortAction(k.tap2))}</div><div class="act">hold ${escapeHtml(shortAction(k.hold))}</div></div><div class="pos">${p.id}</div>`;el.onclick=()=>selectKey(p.id);pad.appendChild(el)})}
 function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));document.getElementById("layerPill").textContent="layer: "+(layerLabels[layer]||layer).toLowerCase();document.getElementById("tftLayer").textContent=layerLabels[layer]||layer}
 function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos;document.getElementById("diagSelected").textContent=pos;const k=config.keys[pos];document.getElementById("panelTitle").textContent=k.label||("K"+pos);document.getElementById("panelSub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("labelInput").value=k.label||"";document.getElementById("typeInput").value=k.type;document.getElementById("tap1").value=k.tap1||"";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";document.getElementById("keyColorInput").value=k.color||"#ffffff";document.getElementById("animationInput").value=config.settings.animation||"static";renderPad();setRemapState()}
 function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCase().replace(/[_\s-]/g,"");if(s==="A"||s==="KCA")return"KC_A";if(s==="B"||s==="KCB")return"KC_B";if(s==="C"||s==="KCC")return"KC_C";if(s==="NONE")return"NONE";return raw}
