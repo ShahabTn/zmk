@@ -365,6 +365,16 @@ void test_wifi_settings() {
         return;
     }
 
+    if (WiFi.status() == WL_CONNECTED && WiFi.SSID() == ssid) {
+        server.send(200, "application/json",
+                    "{\"type\":\"wifi_test\",\"ok\":true,\"message\":\"Already connected\","
+                    "\"ssid\":\"" +
+                        json_escape(WiFi.SSID()) + "\",\"ip\":\"" +
+                        WiFi.localIP().toString() + "\"}");
+        Serial.printf("Wi-Fi test already connected: %s\n", WiFi.localIP().toString().c_str());
+        return;
+    }
+
     Serial.printf("Testing home Wi-Fi SSID %s", ssid.c_str());
     WiFi.disconnect(false, false);
     delay(100);
