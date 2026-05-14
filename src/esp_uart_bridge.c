@@ -96,6 +96,10 @@ static void send_stored_remap(unsigned int position) {
 static void handle_esp_line(char *line) {
     unsigned int position = 0;
     char key_name[12] = {0};
+    char rx_ack[40];
+
+    snprintk(rx_ack, sizeof(rx_ack), "RX %s\n", line);
+    send_esp_line(rx_ack);
 
     if (sscanf(line, "M %u %11s", &position, key_name) == 2 && position < KEY_COUNT) {
         uint32_t keycode = keycode_from_name(key_name);
@@ -108,6 +112,8 @@ static void handle_esp_line(char *line) {
         send_stored_remap(position);
     } else if (sscanf(line, "Q %u", &position) == 1 && position < KEY_COUNT) {
         send_stored_remap(position);
+    } else {
+        send_esp_line("ERR BAD_CMD\n");
     }
 }
 

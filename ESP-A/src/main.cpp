@@ -40,7 +40,7 @@ constexpr char AP_PASSWORD[] = "12345678";
 constexpr uint8_t WIFI_CONNECT_TRIES = 24;
 constexpr uint8_t WIFI_TEST_TRIES = 20;
 constexpr char DEFAULT_CONFIG[] =
-    "{\"version\":1,\"layer\":\"trading\",\"keys\":[{\"id\":0,\"label\":\"BUY\","
+    "{\"version\":4,\"layer\":\"trading\",\"keys\":[{\"id\":0,\"label\":\"BUY\","
     "\"type\":\"broker_api\",\"color\":\"#ef9f27\",\"tap1\":\"BUY 0.01 XAUUSD\","
     "\"tap2\":\"BUY 0.05 XAUUSD\",\"tap3\":\"\",\"hold\":\"\",\"params\":\"{\\\"symbol\\\":\\\"XAUUSD\\\"}\"}]}";
 
@@ -67,6 +67,7 @@ uint8_t remapAckCount;
 uint32_t remapAckDeadline;
 String lastEspRemapCommand = "-";
 String lastNrfStoredRemap = "-";
+String lastEspAction = "-";
 uint32_t restartAt;
 String wifiSsid;
 String wifiPassword;
@@ -139,7 +140,16 @@ bool buzzer_enabled() {
     return doc["settings"]["buzzer"] | false;
 }
 
-String normalize_remap_name(String value) {
+String json_escape(const String &value);
+
+bool is_keycode_type(const String &type) {
+    String normalized = type;
+    normalized.trim();
+    normalized.toLowerCase();
+    return normalized == "keycode" || normalized == "hid";
+}
+
+String normalize_hid_keycode(String value) {
     value.trim();
     value.toUpperCase();
     value.replace("_", "");
@@ -162,7 +172,85 @@ String normalize_remap_name(String value) {
     return "NONE";
 }
 
-String remap_name_for_key(JsonVariant key) { return normalize_remap_name(key["tap1"] | ""); }
+String nrf_remap_name_for_key(JsonVariant key) {
+    String type = key["type"] | "";
+
+    if (!is_keycode_type(type)) {
+        return "NONE";
+    }
+
+    return normalize_hid_keycode(key["tap1"] | "");
+}
+
+String action_for_key(uint8_t position, String *typeOut = nullptr, String *labelOut = nullptr) {
+    JsonDocument doc;
+
+    if (deserializeJson(doc, configJson)) {
+        return "";
+    }
+
+    JsonArray keys = doc["keys"].as<JsonArray>();
+
+    for (JsonVariant key : keys) {
+        if ((key["id"] | 255) == position) {
+            if (typeOut != nullptr) {
+                *typeOut = key["type"] | "";
+            }
+            if (labelOut != nullptr) {
+                *labelOut = key["label"] | "";
+            }
+            return String(key["tap1"] | "");
+        }
+    }
+
+    return "";
+}
+
+void publish_esp_action(uint8_t position, const String &type, const String &label,
+                        const String &action) {
+    JsonDocument doc;
+    doc["type"] = "action";
+    doc["position"] = position;
+    doc["actionType"] = type;
+    doc["label"] = label;
+    doc["action"] = action;
+
+    String out;
+    serializeJson(doc, out);
+    webSocket.broadcastTXT(out);
+
+    lastEspAction = String(position) + " " + type + " " + action;
+    webSocket.broadcastTXT("{\"type\":\"diag\",\"espAction\":\"" + json_escape(lastEspAction) +
+                           "\"}");
+}
+
+void execute_key_action(uint8_t position) {
+    String actionType;
+    String label;
+    String action = action_for_key(position, &actionType, &label);
+
+    actionType.trim();
+    actionType.toLowerCase();
+    action.trim();
+
+    if (actionType.length() == 0 || actionType == "empty" || action.length() == 0 ||
+        action == "NONE") {
+        publish_esp_action(position, "empty", label, "NONE");
+        Serial.printf("ESP action position %u: empty\n", position);
+        return;
+    }
+
+    if (is_keycode_type(actionType)) {
+        publish_esp_action(position, "keycode", label, action);
+        Serial.printf("ESP action position %u: HID handled by nRF (%s)\n", position,
+                      action.c_str());
+        return;
+    }
+
+    publish_esp_action(position, actionType, label, action);
+    Serial.printf("ESP action position %u: %s -> %s\n", position, actionType.c_str(),
+                  action.c_str());
+}
 
 void send_nrf_line(const String &line) {
     NrfSerial.print(line);
@@ -186,16 +274,16 @@ void send_remap_line_to_nrf(uint8_t position, const String &remapName) {
     send_nrf_line("Q " + String(position) + "\n");
 }
 
-uint8_t sync_single_remap_to_nrf(uint8_t position, const String &value) {
+uint8_t sync_single_remap_to_nrf(uint8_t position, const String &type, const String &value) {
     if (position >= 28) {
         return 0;
     }
 
-    String remapName = normalize_remap_name(value);
+    String remapName = is_keycode_type(type) ? normalize_hid_keycode(value) : "NONE";
     mark_remap_sync_pending();
     send_remap_line_to_nrf(position, remapName);
     lastRemapSyncCount = 1;
-    Serial.printf("Synced selected remap %u -> %s\n", position, remapName.c_str());
+    Serial.printf("Synced selected nRF HID remap %u -> %s\n", position, remapName.c_str());
     return 1;
 }
 
@@ -219,11 +307,7 @@ uint8_t sync_remaps_to_nrf() {
             continue;
         }
 
-        String remapName = remap_name_for_key(key);
-
-        if (remapName == "NONE") {
-            continue;
-        }
+        String remapName = nrf_remap_name_for_key(key);
 
         send_remap_line_to_nrf(position, remapName);
         delay(20);
@@ -231,7 +315,7 @@ uint8_t sync_remaps_to_nrf() {
     }
 
     lastRemapSyncCount = sent;
-    Serial.printf("Synced %u simple KC_A/KC_B/KC_C remaps to nRF\n", sent);
+    Serial.printf("Synced %u nRF HID remap slots\n", sent);
     return sent;
 }
 
@@ -258,24 +342,6 @@ void print_i2c_status() {
     print_i2c_device_status(SharedWire, "BH1750", BH1750_ADDR);
 }
 
-void load_config() {
-    preferences.begin("macropad", false);
-    configJson = preferences.getString("config", DEFAULT_CONFIG);
-}
-
-void save_config(const String &json) {
-    configJson = json;
-    preferences.putString("config", configJson);
-}
-
-void send_config(uint8_t client) {
-    webSocket.sendTXT(client, "{\"type\":\"config\",\"config\":" + configJson + "}");
-}
-
-void send_http_config() {
-    server.send(200, "application/json", "{\"type\":\"config\",\"config\":" + configJson + "}");
-}
-
 String json_escape(const String &value) {
     String escaped;
     escaped.reserve(value.length() + 8);
@@ -289,6 +355,66 @@ String json_escape(const String &value) {
     }
 
     return escaped;
+}
+
+void migrate_config_if_needed() {
+    JsonDocument doc;
+
+    if (deserializeJson(doc, configJson)) {
+        configJson = DEFAULT_CONFIG;
+        preferences.putString("config", configJson);
+        return;
+    }
+
+    uint8_t version = doc["version"] | 0;
+
+    if (version >= 4) {
+        return;
+    }
+
+    doc["version"] = 4;
+    JsonArray keys = doc["keys"].as<JsonArray>();
+
+    for (JsonVariant key : keys) {
+        String type = key["type"] | "";
+        String tap1 = key["tap1"] | "";
+        String tap2 = key["tap2"] | "";
+        String hold = key["hold"] | "";
+
+        if (is_keycode_type(type) && normalize_hid_keycode(tap1) == "KC_A" &&
+            normalize_hid_keycode(tap2) == "KC_B" &&
+            normalize_hid_keycode(hold) == "KC_C") {
+            key["type"] = "empty";
+            key["tap1"] = "NONE";
+            key["tap2"] = "";
+            key["hold"] = "";
+        }
+    }
+
+    String migrated;
+    serializeJson(doc, migrated);
+    configJson = migrated;
+    preferences.putString("config", configJson);
+    Serial.println("Migrated ESP-A config to action model v4");
+}
+
+void load_config() {
+    preferences.begin("macropad", false);
+    configJson = preferences.getString("config", DEFAULT_CONFIG);
+    migrate_config_if_needed();
+}
+
+void save_config(const String &json) {
+    configJson = json;
+    preferences.putString("config", configJson);
+}
+
+void send_config(uint8_t client) {
+    webSocket.sendTXT(client, "{\"type\":\"config\",\"config\":" + configJson + "}");
+}
+
+void send_http_config() {
+    server.send(200, "application/json", "{\"type\":\"config\",\"config\":" + configJson + "}");
 }
 
 void send_network_info() {
@@ -438,12 +564,14 @@ void save_http_config() {
     save_config(nextConfig);
 
     uint8_t selectedPosition = doc["selected"] | 255;
-    const char *selectedRemap = doc["remap"] | "";
-    uint8_t sent = selectedPosition < 28 ? sync_single_remap_to_nrf(selectedPosition, selectedRemap)
-                                         : sync_remaps_to_nrf();
+    String selectedType;
+    String selectedRemap = action_for_key(selectedPosition, &selectedType, nullptr);
+    uint8_t sent = selectedPosition < 28
+                       ? sync_single_remap_to_nrf(selectedPosition, selectedType, selectedRemap)
+                       : sync_remaps_to_nrf();
 
     server.send(200, "application/json",
-                "{\"type\":\"ok\",\"message\":\"config saved; remaps sent: " + String(sent) +
+                "{\"type\":\"ok\",\"message\":\"config saved; nRF HID slots synced: " + String(sent) +
                     "\"}");
     Serial.println("GUI config saved over HTTP");
 }
@@ -466,11 +594,12 @@ void send_http_remap() {
 
     uint8_t position = doc["position"] | 255;
     const char *remap = doc["remap"] | "";
-    uint8_t sent = sync_single_remap_to_nrf(position, remap);
+    const char *remapType = doc["type"] | "keycode";
+    uint8_t sent = sync_single_remap_to_nrf(position, remapType, remap);
 
-    String normalized = normalize_remap_name(remap);
+    String normalized = is_keycode_type(remapType) ? normalize_hid_keycode(remap) : "NONE";
     server.send(200, "application/json",
-                "{\"type\":\"ok\",\"message\":\"direct remap sent\",\"position\":" +
+                "{\"type\":\"ok\",\"message\":\"direct nRF HID remap sent\",\"position\":" +
                     String(position) + ",\"remap\":\"" + normalized + "\",\"sent\":" +
                     String(sent) + "}");
 }
@@ -506,11 +635,13 @@ void handle_websocket_message(uint8_t client, const String &payload) {
         save_config(nextConfig);
 
         uint8_t selectedPosition = doc["selected"] | 255;
-        const char *selectedRemap = doc["remap"] | "";
-        uint8_t sent = selectedPosition < 28 ? sync_single_remap_to_nrf(selectedPosition, selectedRemap)
-                                             : sync_remaps_to_nrf();
+        String selectedType;
+        String selectedRemap = action_for_key(selectedPosition, &selectedType, nullptr);
+        uint8_t sent = selectedPosition < 28
+                           ? sync_single_remap_to_nrf(selectedPosition, selectedType, selectedRemap)
+                           : sync_remaps_to_nrf();
 
-        String message = "config saved; remaps sent: " + String(sent);
+        String message = "config saved; nRF HID slots synced: " + String(sent);
         send_ok(client, message.c_str());
         Serial.println("GUI config saved");
         return;
@@ -625,6 +756,7 @@ void handle_key_event(uint8_t position, bool pressed) {
         if (buzzer_enabled()) {
             tone(BUZZER_PIN, BUZZER_FREQUENCY_HZ, BUZZER_DURATION_MS);
         }
+        execute_key_action(position);
     } else {
         leds[led] = CRGB::Blue;
         keyLedReleaseAt[position % PER_KEY_COUNT] = 0;
