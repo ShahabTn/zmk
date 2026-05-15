@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZMK-BLE · Remapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --surface3: #252528;
+    --border: #2e2e33;
+    --border2: #3a3a40;
+    --text: #e8e8ec;
+    --text2: #8a8a94;
+    --text3: #55555e;
+    --accent: #00d4aa;
+    --accent2: #00a888;
+    --warn: #f5a623;
+    --danger: #e85050;
+    --blue: #4a9eff;
+    --purple: #9b7fff;
+    --key-bg: #1a1a1d;
+    --key-active: #00d4aa;
+    --key-selected: #f5a623;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 44px 1fr;
+    grid-template-columns: 220px 1fr 260px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ── TOPBAR ── */
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 16px;
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.08em;
+    margin-right: 20px;
+  }
+  .logo span { color: var(--accent); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    margin-right: 8px;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+  }
+  .status-pill.online .dot { background: var(--accent); }
+
+  .layer-select {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-right: 16px;
+  }
+  .layer-btn {
+    padding: 4px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .layer-btn:last-child { border-right: none; }
+  .layer-btn.active {
+    background: var(--surface3);
+    color: var(--warn);
+  }
+  .layer-btn:hover:not(.active) { background: var(--surface3); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+  }
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .toggle {
+    width: 28px; height: 15px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle.on { background: var(--accent2); border-color: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 9px; height: 9px;
+    background: var(--text3);
+    border-radius: 50%;
+    transition: left 0.2s, background 0.2s;
+  }
+  .toggle.on::after { left: 15px; background: #fff; }
+
+  .swatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+  }
+
+  .top-btn {
+    padding: 5px 14px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text2);
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .top-btn:hover { background: var(--surface3); color: var(--text); }
+  .top-btn.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .top-btn.primary:hover { background: var(--accent2); }
+
+  /* ── LEFT SIDEBAR ── */
+  .sidebar-left {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px 0;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 0 16px;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .layer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .layer-item:hover { background: var(--surface2); }
+  .layer-item.active { background: var(--surface2); }
+  .layer-item .li-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+  }
+  .layer-item.active .li-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  .layer-item .li-name {
+    font-size: 13px;
+    color: var(--text2);
+    flex: 1;
+  }
+  .layer-item.active .li-name { color: var(--text); }
+
+  .sensor-card {
+    margin: 4px 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .sensor-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .sensor-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .sensor-key {
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .sensor-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .sensor-val.accent { color: var(--accent); }
+  .sensor-val.warn { color: var(--warn); }
+
+  .battery-bar {
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .battery-fill {
+    height: 100%;
+    width: 74%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .wifi-card {
+    margin: 4px 10px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .wifi-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 5px var(--accent);
+    flex-shrink: 0;
+  }
+  .wifi-info { flex: 1; }
+  .wifi-ssid { font-size: 12px; color: var(--text); font-weight: 500; }
+  .wifi-ip { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text3); }
+
+  /* ── CENTER ── */
+  .center {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* device display */
+  .device-display {
+    background: #0a0a0c;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    width: 240px;
+    padding: 14px;
+    position: relative;
+  }
+  .device-display::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 30px; right: 30px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .dev-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .dev-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .dev-batt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--warn);
+  }
+  .dev-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .dev-cell {}
+  .dev-cell-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+  .dev-cell-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .dev-cell-val.small { font-size: 11px; color: var(--text); }
+  .dev-layer-badge {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--warn);
+    letter-spacing: 0.05em;
+    padding: 4px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 4px 0;
+  }
+  .dev-status {
+    font-size: 9px;
+    color: var(--danger);
+    text-align: center;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em;
+  }
+  .dev-bottom-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-align: right;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em;
+  }
+
+  /* KEY GRID */
+  .keypad-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    position: relative;
+  }
+
+  .key-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 64px);
+    gap: 6px;
+  }
+
+  .key {
+    width: 64px;
+    height: 58px;
+    background: var(--key-bg);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+    padding: 4px;
+  }
+  .key:hover {
+    background: var(--surface3);
+    border-color: var(--text3);
+    transform: translateY(-1px);
+  }
+  .key.active {
+    background: rgba(0, 212, 170, 0.08);
+    border-color: var(--accent);
+  }
+  .key.selected {
+    background: rgba(245, 166, 35, 0.1);
+    border-color: var(--warn);
+  }
+  .key.empty {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .key.empty:hover { transform: none; background: var(--key-bg); border-color: var(--border2); }
+
+  .key-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+    letter-spacing: 0.02em;
+  }
+  .key.active .key-name { color: var(--accent); }
+  .key.selected .key-name { color: var(--warn); }
+
+  .key-action {
+    font-size: 9px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .key.active .key-action { color: var(--accent2); }
+
+  .key-num {
+    position: absolute;
+    bottom: 3px;
+    right: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--text3);
+  }
+
+  .key-placeholder {
+    width: 64px; height: 58px;
+  }
+
+  /* ── RIGHT SIDEBAR ── */
+  .sidebar-right {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .panel-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .news-placeholder {
+    font-size: 12px;
+    color: var(--danger);
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .news-placeholder::before {
+    content: '●';
+    font-size: 8px;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .current-key-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .key-badge {
+    width: 44px; height: 44px;
+    background: rgba(245, 166, 35, 0.1);
+    border: 1px solid var(--warn);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--warn);
+  }
+  .key-meta { flex: 1; }
+  .key-meta-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .key-meta-sub {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .diag-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .diag-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+  }
+  .diag-cell-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .diag-cell-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .diag-cell.span2 { grid-column: 1 / -1; }
+  .diag-cell-val.accent { color: var(--accent); }
+
+  .form-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    display: block;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 10px;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+  }
+  .form-select:focus { border-color: var(--accent); }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .action-tap {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    white-space: nowrap;
+    min-width: 52px;
+    text-align: center;
+  }
+  .action-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--blue);
+    background: rgba(74, 158, 255, 0.08);
+    border: 1px solid rgba(74, 158, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 10px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .statusbar {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .statusbar span { display: flex; align-items: center; gap: 5px; }
+  .statusbar .ok { color: var(--accent); }
+
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header>
+  <div class="logo">ZMK<span>·</span>BLE <span style="color:var(--text3);font-weight:300">remapper</span></div>
+
+  <div class="status-pill" id="conn">
+    <div class="dot"></div>
+    <span id="connText">offline</span>
+  </div>
+
+  <div class="layer-select">
+    <div class="layer-btn" data-layer="system">System</div>
+    <div class="layer-btn" data-layer="smart_home">Smart Home</div>
+    <div class="layer-btn active" data-layer="trading">Trading</div>
+  </div>
+
+  <div class="toggle-row">
+    <div class="toggle-item">
+      <div class="toggle" id="buzzerToggle"></div>
+      buzzer
+    </div>
+    <div class="toggle-item">
+      <div class="toggle" id="hapticToggle"></div>
+      haptic
+    </div>
+    <div class="toggle-item">
+      <div class="toggle" id="darkToggle"></div>
+      dark
+    </div>
+    <div class="toggle-item">
+      indicator
+      <input id="indicatorColorInput" type="color" style="display:none">
+      <div class="swatch" id="indicatorSwatch" style="background:#1a2d6b;"></div>
+    </div>
+    <div class="toggle-item">
+      underglow
+      <input id="underglowColorInput" type="color" style="display:none">
+      <div class="swatch" id="underglowSwatch" style="background:#00d4aa;border-color:var(--accent)"></div>
+    </div>
+    <button class="top-btn" id="exportBtn" type="button">export</button>
+    <button class="top-btn" id="remapBtn" type="button" style="color:var(--text3)">remap off</button>
+    <button class="top-btn primary" id="applyBtn" type="button">apply</button>
+  </div>
+</header>
+
+<!-- LEFT SIDEBAR -->
+<aside class="sidebar-left scrollbar-thin">
+  <div class="section-label">Layers</div>
+  <div class="layer-item" data-layer="system"><div class="li-dot" style="background:var(--purple);box-shadow:0 0 5px var(--purple)"></div><div class="li-name">System</div></div>
+  <div class="layer-item" data-layer="smart_home"><div class="li-dot" style="background:var(--accent);box-shadow:0 0 5px var(--accent)"></div><div class="li-name">Smart Home</div></div>
+  <div class="layer-item active" data-layer="trading"><div class="li-dot"></div><div class="li-name">Trading</div></div>
+
+  <div class="section-label">Sensors</div>
+
+  <div class="sensor-card">
+    <div class="sensor-label">Temperature</div>
+    <div class="sensor-row">
+      <div class="sensor-key">inside</div>
+      <div class="sensor-val accent" id="insideTemp">24.1°C</div>
+    </div>
+    <div class="sensor-row">
+      <div class="sensor-key">outside · Düsseldorf</div>
+      <div class="sensor-val" id="outsideTemp">--°C</div>
+    </div>
+  </div>
+
+  <div class="sensor-card" style="margin-top:6px">
+    <div class="sensor-label">Power</div>
+    <div class="sensor-row">
+      <div class="sensor-key">voltage</div>
+      <div class="sensor-val">3.92V</div>
+    </div>
+    <div class="sensor-row">
+      <div class="sensor-key">current</div>
+      <div class="sensor-val">142mA</div>
+    </div>
+  </div>
+
+  <div class="sensor-card" style="margin-top:6px">
+    <div class="sensor-label">Battery</div>
+    <div class="sensor-row">
+      <div class="sensor-key">level</div>
+      <div class="sensor-val warn" id="batteryPct">74%</div>
+    </div>
+    <div class="battery-bar"><div class="battery-fill" id="batteryFill"></div></div>
+  </div>
+
+  <div class="sensor-card" style="margin-top:6px">
+    <div class="sensor-label">Security</div>
+    <div class="sensor-row">
+      <div class="sensor-key">secure element</div>
+      <div class="sensor-val accent">ready</div>
+    </div>
+  </div>
+
+  <div class="section-label">Network</div>
+  <div class="wifi-card">
+    <div class="wifi-dot"></div>
+    <div class="wifi-info">
+      <div class="wifi-ssid" id="wifiSsidLabel">checking</div>
+      <div class="wifi-ip" id="wifiIpLabel">-</div>
+    </div>
+  </div>
+</aside>
+
+<!-- CENTER -->
+<main class="center">
+
+  <div class="device-display">
+    <div class="dev-header">
+      <div class="dev-title">ZMK-BLE</div>
+      <div class="dev-batt" id="devBattery">Battery 74%</div>
+    </div>
+    <div class="dev-layer-badge" id="devLayer">TRADING</div>
+    <div class="dev-grid" style="margin-top:8px">
+      <div class="dev-cell">
+        <div class="dev-cell-label">Outside</div>
+        <div class="dev-cell-val small" id="devOutside">--°C</div>
+      </div>
+      <div class="dev-cell">
+        <div class="dev-cell-label">Inside</div>
+        <div class="dev-cell-val small" id="devInside">24.1°C</div>
+      </div>
+      <div class="dev-cell">
+        <div class="dev-cell-label">Next News</div>
+        <div class="dev-cell-val small" id="devNews">—</div>
+      </div>
+    </div>
+    <div class="dev-status" id="devNewsStatus">● news unavailable</div>
+    <div class="dev-bottom-label" id="devLayerBottom">TRADING LAYER</div>
+  </div>
+
+  <div class="keypad-wrap">
+    <div class="key-grid" id="keyGrid"></div>
+  </div>
+
+</main>
+
+<!-- RIGHT SIDEBAR -->
+<aside class="sidebar-right scrollbar-thin">
+  <div class="panel-section">
+    <div class="panel-title">News</div>
+    <div class="news-placeholder">news unavailable</div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-title">Current Key</div>
+    <div class="current-key-display">
+      <div class="key-badge" id="ck-badge">K0</div>
+      <div class="key-meta">
+        <div class="key-meta-name" id="ck-name">K0</div>
+        <div class="key-meta-sub" id="ck-sub">position 0 · Trading</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-title">Diagnostics</div>
+    <div class="diag-grid">
+      <div class="diag-cell">
+        <div class="diag-cell-label">Physical key</div>
+        <div class="diag-cell-val" id="diagPhysical">-</div>
+      </div>
+      <div class="diag-cell">
+        <div class="diag-cell-label">Selected key</div>
+        <div class="diag-cell-val" id="diagSelected">0</div>
+      </div>
+      <div class="diag-cell span2">
+        <div class="diag-cell-label">ESP action</div>
+        <div class="diag-cell-val accent" id="diagEsp" style="font-size:11px">-</div>
+      </div>
+      <div class="diag-cell span2">
+        <div class="diag-cell-label">nRF HID</div>
+        <div class="diag-cell-val" id="diagNrf" style="font-size:11px">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-title">Key Actions</div>
+    <label class="form-label">Key label</label>
+    <input class="form-input" id="labelInput" type="text" placeholder="—" />
+    <label class="form-label">Action type</label>
+    <select class="form-select" id="typeInput">
+      <option value="broker_api">Broker API</option>
+      <option value="keycode">HID Keycode</option>
+      <option value="macro">Macro</option>
+      <option value="layer">Layer toggle</option>
+      <option value="smart_home">Smart home</option>
+      <option value="empty">Empty</option>
+    </select>
+    <label class="form-label">Tap / hold actions</label>
+    <div class="action-row">
+      <div class="action-tap">1 tap</div>
+      <input class="action-key" id="tap1" value="KC_A">
+    </div>
+    <div class="action-row">
+      <div class="action-tap">2 taps</div>
+      <input class="action-key" id="tap2" value="KC_B">
+    </div>
+    <div class="action-row">
+      <div class="action-tap">hold</div>
+      <input class="action-key" id="hold" value="-" style="color:var(--text3);background:transparent;border-color:var(--border)">
+    </div>
+  </div>
+</aside>
+
+<script>
+const keyCount=28;
+const colors=["#f5a623","#00d4aa","#4a9eff","#e85050","#9b7fff","#e8e8ec","#55555e"];
+const layerLabels={system:"System",smart_home:"Smart Home",trading:"Trading"};
+const layerDots={system:"var(--purple)",smart_home:"var(--accent)",trading:"var(--warn)"};
+const positions=[
+  null,{id:0},{id:1},{id:2},{id:3},{id:4},null,
+  null,{id:5},{id:6},{id:7},{id:8},{id:9},null,
+  {id:10},{id:11},{id:12},{id:13},{id:14},{id:15},null,
+  {id:16,label:"MAC"},{id:17},{id:18,label:"QWE"},{id:19},{id:20},{id:21},null,
+  {id:22,label:"WIN"},{id:23},{id:24},{id:25},{id:26},{id:27,label:"K277"},null
+];
+let ws,selected=0,layer="trading",remap=false;
+let config={version:4,layer:"trading",settings:{indicatorColor:"#1a2d6b",underglowColor:"#00d4aa",animation:"rainbow",buzzer:true,haptic:false,darkMode:true},keys:[]};
+for(let i=0;i<keyCount;i++)config.keys.push({id:i,label:"K"+i,type:"empty",color:colors[i%colors.length],tap1:"NONE",tap2:"",hold:"",params:""});
+Object.assign(config.keys[0],{label:"K0",type:"keycode",tap1:"KC_A",tap2:"",hold:""});
+Object.assign(config.keys[1],{label:"SELL",type:"broker_api",tap1:"SELL 0.01",tap2:"SELL 0.05",hold:"ARM SELL",params:'{"symbol":"XAUUSD"}'});
+
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function shortAction(k){const v=(k.tap1||"NONE").replace(/^keycode:/,"");return v.length>14?v.slice(0,12)+"…":v}
+function isEmpty(k){return !k||k.type==="empty"||!k.tap1||k.tap1==="NONE"}
+function keyClass(k,id){let cls="key";if(isEmpty(k))cls+=" empty";if(k&&k.type==="broker_api")cls+=" active";if(id===selected)cls+=" selected";return cls}
+function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCase().replace(/[_\s-]/g,"");if(s==="A"||s==="KCA")return"KC_A";if(s==="B"||s==="KCB")return"KC_B";if(s==="C"||s==="KCC")return"KC_C";if(s==="NONE"||s==="")return"NONE";return raw}
+function normalizeConfig(next){next=next||{};next.version=4;next.settings=Object.assign({indicatorColor:"#1a2d6b",underglowColor:"#00d4aa",animation:"rainbow",buzzer:true,haptic:false,darkMode:true},next.settings||{});next.layer=next.layer||"trading";next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"empty",color:colors[i%colors.length],tap1:"NONE",tap2:"",hold:"",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p&&p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
+
+function renderKeys(){const grid=document.getElementById("keyGrid");grid.innerHTML="";positions.forEach(p=>{if(!p){const ph=document.createElement("div");ph.className="key-placeholder";grid.appendChild(ph);return}const k=config.keys[p.id];const el=document.createElement("button");el.type="button";el.className=keyClass(k,p.id);el.dataset.pos=p.id;el.innerHTML=`<div class="key-name">${escapeHtml(k.label||("K"+p.id))}</div><div class="key-action">${escapeHtml(shortAction(k))}<br>${escapeHtml(k.tap2||"—")}</div><div class="key-num">${p.id}</div>`;el.onclick=()=>selectKey(p.id);grid.appendChild(el)})}
+function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));const name=layerLabels[layer]||layer;document.getElementById("devLayer").textContent=name.toUpperCase();document.getElementById("devLayerBottom").textContent=name.toUpperCase()+" LAYER"}
+function applySettings(){const s=config.settings||{};document.getElementById("buzzerToggle").classList.toggle("on",!!s.buzzer);document.getElementById("hapticToggle").classList.toggle("on",!!s.haptic);document.getElementById("darkToggle").classList.toggle("on",!!s.darkMode);document.getElementById("indicatorColorInput").value=s.indicatorColor||"#1a2d6b";document.getElementById("underglowColorInput").value=s.underglowColor||"#00d4aa";document.getElementById("indicatorSwatch").style.background=document.getElementById("indicatorColorInput").value;document.getElementById("underglowSwatch").style.background=document.getElementById("underglowColorInput").value}
+function savePanel(){const k=config.keys[selected];if(!k)return;k.label=document.getElementById("labelInput").value||("K"+selected);k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);config.version=4;config.layer=layer;config.settings.buzzer=document.getElementById("buzzerToggle").classList.contains("on");config.settings.haptic=document.getElementById("hapticToggle").classList.contains("on");config.settings.darkMode=document.getElementById("darkToggle").classList.contains("on");config.settings.indicatorColor=document.getElementById("indicatorColorInput").value;config.settings.underglowColor=document.getElementById("underglowColorInput").value;renderKeys()}
+function selectKey(pos,save=true){if(save)savePanel();selected=pos;const k=config.keys[pos];const name=k.label||("K"+pos);document.getElementById("ck-badge").textContent=name;document.getElementById("ck-name").textContent=name;document.getElementById("ck-sub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("diagSelected").textContent=pos;document.getElementById("labelInput").value=name;document.getElementById("typeInput").value=k.type||"empty";document.getElementById("tap1").value=k.tap1||"NONE";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";renderKeys()}
+function setConn(ok){const el=document.getElementById("conn");el.classList.toggle("online",ok);document.getElementById("connText").textContent=ok?"online":"offline"}
+function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
+function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"trading";applySettings();updateLayerUI();selectKey(selected,false)}if(msg.type==="key"){document.getElementById("diagPhysical").textContent=msg.position;if(msg.pressed&&config.keys[msg.position])selectKey(msg.position)}if(msg.type==="action"){document.getElementById("diagEsp").textContent=`${msg.position} ${msg.actionType}: ${msg.action}`}if(msg.type==="diag"){if(msg.espAction)document.getElementById("diagEsp").textContent=msg.espAction;if(msg.espSent)document.getElementById("diagNrf").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("diagEsp").textContent=msg.message||"saved"}}catch{}}}
+async function saveConfig(){savePanel();const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"set_config",config,selected})});const msg=await res.json();document.getElementById("diagEsp").textContent=msg.message||"saved"}
+async function loadNetwork(){try{const res=await fetch("/api/network");const msg=await res.json();const connected=!!msg.homeIp;document.getElementById("wifiSsidLabel").textContent=connected?msg.homeSsid:(msg.apSsid||"setup AP");document.getElementById("wifiIpLabel").textContent=connected?msg.homeIp:(msg.apIp||"192.168.4.1")}catch{}}
+function exportConfig(){savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)}
+
+document.getElementById("applyBtn").onclick=()=>saveConfig().catch(err=>document.getElementById("diagEsp").textContent=err.message);
+document.getElementById("exportBtn").onclick=exportConfig;
+document.getElementById("remapBtn").onclick=()=>{remap=!remap;document.getElementById("remapBtn").textContent=remap?"remap on":"remap off"};
+["buzzerToggle","hapticToggle","darkToggle"].forEach(id=>document.getElementById(id).onclick=()=>{document.getElementById(id).classList.toggle("on");savePanel()});
+document.getElementById("indicatorSwatch").onclick=()=>document.getElementById("indicatorColorInput").click();
+document.getElementById("underglowSwatch").onclick=()=>document.getElementById("underglowColorInput").click();
+["indicatorColorInput","underglowColorInput"].forEach(id=>document.getElementById(id).oninput=()=>{applySettings();savePanel()});
+["labelInput","typeInput","tap1","tap2","hold"].forEach(id=>document.getElementById(id).oninput=savePanel);
+document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{layer=el.dataset.layer;updateLayerUI();savePanel();selectKey(selected,false)});
+
+config=normalizeConfig(config);applySettings();updateLayerUI();renderKeys();selectKey(0,false);connect();loadNetwork();
+</script>
+</body>
+</html>

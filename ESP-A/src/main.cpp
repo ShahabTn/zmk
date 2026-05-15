@@ -708,6 +708,21 @@ void start_network() {
     }
 }
 
+void serve_gui_file(const char *path) {
+    File file = LittleFS.open(path, "r");
+
+    if (!file) {
+        server.send(404, "text/plain", "not found");
+        return;
+    }
+
+    server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    server.sendHeader("Pragma", "no-cache");
+    server.sendHeader("Expires", "0");
+    server.streamFile(file, "text/html");
+    file.close();
+}
+
 void start_web_gui() {
     if (!LittleFS.begin(true)) {
         Serial.println("LittleFS mount failed");
@@ -715,20 +730,16 @@ void start_web_gui() {
     }
 
     server.on("/", HTTP_GET, []() {
-        File file = LittleFS.open("/index.html", "r");
-        server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        server.sendHeader("Pragma", "no-cache");
-        server.sendHeader("Expires", "0");
-        server.streamFile(file, "text/html");
-        file.close();
+        serve_gui_file("/index.html");
     });
     server.on("/index.html", HTTP_GET, []() {
-        File file = LittleFS.open("/index.html", "r");
-        server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-        server.sendHeader("Pragma", "no-cache");
-        server.sendHeader("Expires", "0");
-        server.streamFile(file, "text/html");
-        file.close();
+        serve_gui_file("/index.html");
+    });
+    server.on("/b", HTTP_GET, []() {
+        serve_gui_file("/index-b.html");
+    });
+    server.on("/index-b.html", HTTP_GET, []() {
+        serve_gui_file("/index-b.html");
     });
     server.on("/favicon.ico", HTTP_GET, []() {
         server.send(204);
