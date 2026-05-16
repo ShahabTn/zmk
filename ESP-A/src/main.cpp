@@ -74,6 +74,9 @@ String wifiPassword;
 uint8_t lightbarBrightness = 80;
 uint8_t lightbarWarmth = 40;
 bool lightbarOn = true;
+uint8_t lightstripBrightness = 80;
+uint8_t lightstripWarmth = 20;
+bool lightstripOn = true;
 
 String get_preference_string(const char *key, const char *fallback = "") {
     return preferences.isKey(key) ? preferences.getString(key, fallback) : String(fallback);
@@ -145,6 +148,7 @@ bool buzzer_enabled() {
 
 String json_escape(const String &value);
 void load_lightbar_state_preferences();
+void load_lightstrip_state_preferences();
 
 bool is_keycode_type(const String &type) {
     String normalized = type;
@@ -407,6 +411,7 @@ void load_config() {
     configJson = preferences.getString("config", DEFAULT_CONFIG);
     migrate_config_if_needed();
     load_lightbar_state_preferences();
+    load_lightstrip_state_preferences();
 }
 
 void save_config(const String &json) {
@@ -504,6 +509,80 @@ void handle_lightbar_temperature() {
     save_lightbar_state_preferences();
     broadcast_lightbar_state();
     send_lightbar_state_http();
+}
+
+void broadcast_lightstrip_state() {
+    JsonDocument doc;
+    doc["type"] = "lightstrip_state";
+    doc["brightness"] = lightstripBrightness;
+    doc["warmth"] = lightstripWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(lightstripWarmth) * 3800 / 100;
+    doc["on"] = lightstripOn;
+
+    String out;
+    serializeJson(doc, out);
+    webSocket.broadcastTXT(out);
+}
+
+void send_lightstrip_state_http() {
+    JsonDocument doc;
+    doc["type"] = "lightstrip_state";
+    doc["brightness"] = lightstripBrightness;
+    doc["warmth"] = lightstripWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(lightstripWarmth) * 3800 / 100;
+    doc["on"] = lightstripOn;
+
+    String out;
+    serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+void save_lightstrip_state_preferences() {
+    preferences.putUChar("ls_bright", lightstripBrightness);
+    preferences.putUChar("ls_warmth", lightstripWarmth);
+    preferences.putBool("ls_on", lightstripOn);
+}
+
+void load_lightstrip_state_preferences() {
+    lightstripBrightness = preferences.getUChar("ls_bright", lightstripBrightness);
+    lightstripWarmth = preferences.getUChar("ls_warmth", lightstripWarmth);
+    lightstripOn = preferences.getBool("ls_on", lightstripOn);
+}
+
+void handle_lightstrip_brightness() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    int value = doc["value"] | lightstripBrightness;
+    lightstripBrightness = constrain(value, 0, 100);
+    lightstripOn = lightstripBrightness > 0;
+    save_lightstrip_state_preferences();
+    broadcast_lightstrip_state();
+    send_lightstrip_state_http();
+}
+
+void handle_lightstrip_temperature() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    if (doc["warmth"].is<int>()) {
+        int warmth = doc["warmth"] | lightstripWarmth;
+        lightstripWarmth = constrain(warmth, 0, 100);
+    } else {
+        int kelvin = doc["kelvin"] | (6500 - static_cast<uint16_t>(lightstripWarmth) * 3800 / 100);
+        kelvin = constrain(kelvin, 2700, 6500);
+        lightstripWarmth = constrain((6500 - kelvin) * 100 / 3800, 0, 100);
+    }
+
+    save_lightstrip_state_preferences();
+    broadcast_lightstrip_state();
+    send_lightstrip_state_http();
 }
 
 void send_config(uint8_t client) {
@@ -849,6 +928,9 @@ void start_web_gui() {
     server.on("/api/lightbar/state", HTTP_GET, send_lightbar_state_http);
     server.on("/api/lightbar/brightness", HTTP_POST, handle_lightbar_brightness);
     server.on("/api/lightbar/temperature", HTTP_POST, handle_lightbar_temperature);
+    server.on("/api/lightstrip/state", HTTP_GET, send_lightstrip_state_http);
+    server.on("/api/lightstrip/brightness", HTTP_POST, handle_lightstrip_brightness);
+    server.on("/api/lightstrip/temperature", HTTP_POST, handle_lightstrip_temperature);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
