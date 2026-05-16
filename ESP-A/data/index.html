@@ -89,6 +89,8 @@ body.dark .field input,body.dark .field select,body.dark .field textarea{backgro
 .news-card .big{font-size:20px}.news-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}.news-item{border:1px solid #ead6d6;border-left:5px solid #e24b4a;border-radius:9px;padding:8px;background:#fff8f8}
 .news-item.soon{background:#fff0f0;border-left-width:8px;box-shadow:0 8px 20px rgba(226,75,74,.14)}
 .news-title{font-weight:850;font-size:14px}.news-meta{display:flex;justify-content:space-between;gap:8px;color:#666;font-size:12px;margin-top:4px}.countdown{font-weight:850;color:#b71c1c}.countdown.big-count{font-size:18px;display:block;margin-top:4px}
+.lightbar-card{display:none}.lightbar-card.active{display:block}.lightbar-widget{display:flex;flex-direction:column;gap:12px}.lightbar-canvas-wrap{display:flex;justify-content:center}.lightbar-canvas{width:208px;height:120px;display:block;border-radius:8px;background:#14141a}.lightbar-controls{display:flex;flex-direction:column;gap:9px}.lightbar-ctrl{display:grid;grid-template-columns:74px 1fr 34px;gap:8px;align-items:center;color:#6b6b66;font-size:12px}.lightbar-ctrl input[type=range]{width:100%;height:3px;accent-color:#d4860a;cursor:pointer}.lightbar-ctrl span:last-child{text-align:right;font-weight:800;color:#303030}.lightbar-status{display:flex;align-items:center;justify-content:space-between;color:#6b6b66;font-size:12px}.lightbar-power{display:flex;align-items:center;gap:6px}.lightbar-dot{width:8px;height:8px;border-radius:50%;background:#1d9e75;box-shadow:0 0 0 4px rgba(29,158,117,.14)}.lightbar-dot.off{background:#777;box-shadow:0 0 0 4px rgba(120,120,120,.12)}
+body.dark .lightbar-ctrl span:last-child{color:#eceff2}
 .bottom{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid #d6d5d0;color:#666;font-size:13px}
 .toast{position:fixed;right:18px;bottom:48px;background:#1b5e20;color:#fff;border-radius:9px;padding:10px 13px;opacity:0;transform:translateY(8px);transition:.18s}.toast.show{opacity:1;transform:none}
 @media(max-width:1150px){.body{grid-template-columns:1fr}.side{order:2}.panel{order:3;border-left:0;border-top:1px solid #d9dcd5}.main{order:1}.pad{transform:scale(.86);transform-origin:top center}}
@@ -186,6 +188,20 @@ body.dark .field input,body.dark .field select,body.dark .field textarea{backgro
         <div class="big" id="panelTitle">K0</div>
         <div class="muted" id="panelSub">position 0 · system</div>
       </div>
+      <div class="card lightbar-card" id="lightbarPanel">
+        <div class="card-title">Light Bar</div>
+        <div class="lightbar-widget">
+          <div class="lightbar-canvas-wrap"><canvas class="lightbar-canvas" id="lightbarCanvas" width="208" height="120"></canvas></div>
+          <div class="lightbar-controls">
+            <label class="lightbar-ctrl"><span>brightness</span><input id="lightbarBrightness" type="range" min="0" max="100" value="80" step="1"><span id="lightbarBrightnessValue">80</span></label>
+            <label class="lightbar-ctrl"><span>warm/cool</span><input id="lightbarWarmth" type="range" min="0" max="100" value="40" step="1"><span id="lightbarWarmthValue">40</span></label>
+          </div>
+          <div class="lightbar-status">
+            <div class="lightbar-power"><span class="lightbar-dot" id="lightbarPowerDot"></span><span id="lightbarPowerLabel">on</span></div>
+            <span id="lightbarKelvin">4980K</span>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <div class="card-title">Diagnostics</div>
         <div class="grid2">
@@ -242,14 +258,105 @@ function gridColumn(c){return c===1?3:c===2?5:c+4}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function renderPad(){pad.innerHTML='<div class="pcb-blank"></div>';positions.forEach(p=>{const k=config.keys[p.id];const el=document.createElement("div");el.className=`key ${keyClass(k)} ${p.id===selected?"selected":""}`;el.style.gridRow=p.r;el.style.gridColumn=gridColumn(p.c);el.dataset.pos=p.id;el.innerHTML=`<div class="name">${escapeHtml(k.label||("K"+p.id))}</div><div class="acts"><div class="act">1 dot ${escapeHtml(shortAction(k.tap1))}</div><div class="act">2 dots ${escapeHtml(shortAction(k.tap2))}</div><div class="act">hold ${escapeHtml(shortAction(k.hold))}</div></div><div class="pos">${p.id}</div>`;el.onclick=()=>selectKey(p.id);pad.appendChild(el)})}
 function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));const label=layerLabels[layer]||layer;document.getElementById("layerPill").textContent="layer: "+label.toLowerCase();document.getElementById("tftLayer").textContent=label;document.getElementById("tftLayerName").textContent=label+" layer"}
-function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos;document.getElementById("diagSelected").textContent=pos;const k=config.keys[pos];document.getElementById("panelTitle").textContent=k.label||("K"+pos);document.getElementById("panelSub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("labelInput").value=k.label||"";document.getElementById("typeInput").value=k.type;document.getElementById("tap1").value=k.tap1||"";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";document.getElementById("keyColorInput").value=k.color||"#ffffff";document.getElementById("animationInput").value=config.settings.animation||"static";renderPad();setRemapState()}
+function selectKey(pos,saveCurrent=true){if(saveCurrent)savePanel();selected=pos;document.getElementById("diagSelected").textContent=pos;const k=config.keys[pos];document.getElementById("panelTitle").textContent=k.label||("K"+pos);document.getElementById("panelSub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("labelInput").value=k.label||"";document.getElementById("typeInput").value=k.type;document.getElementById("tap1").value=k.tap1||"";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";document.getElementById("keyColorInput").value=k.color||"#ffffff";document.getElementById("animationInput").value=config.settings.animation||"static";renderPad();setRemapState();updateLightbarPanel()}
 function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCase().replace(/[_\s-]/g,"");if(s==="A"||s==="KCA")return"KC_A";if(s==="B"||s==="KCB")return"KC_B";if(s==="C"||s==="KCC")return"KC_C";if(s==="NONE")return"NONE";return raw}
 function savePanel(){if(!config.keys[selected])return;const k=config.keys[selected];k.label=document.getElementById("labelInput").value;k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);k.color=document.getElementById("keyColorInput").value;document.getElementById("tap1").value=k.tap1;document.getElementById("tap2").value=k.tap2;document.getElementById("hold").value=k.hold;config.version=4;config.settings.animation=document.getElementById("animationInput").value;config.settings.buzzer=document.getElementById("headerBuzzer").checked;config.settings.haptic=document.getElementById("headerHaptic").checked;config.settings.darkMode=document.getElementById("darkModeToggle").checked;config.settings.indicatorColor=document.getElementById("indicatorColorInput").value;config.settings.underglowColor=document.getElementById("underglowColorInput").value;config.layer=layer;applyTheme();renderPad()}
 function setRemapState(){document.querySelectorAll("#editor input,#editor select,#editor textarea").forEach(el=>el.disabled=!remap);document.getElementById("remapBtn").className="btn"+(remap?" active":"");document.getElementById("remapBtn").textContent=remap?"remapping on":"remapping off"}
 function applyTheme(){document.body.classList.toggle("dark",!!config.settings.darkMode)}
 function applySettingsToControls(){document.getElementById("headerBuzzer").checked=!!config.settings.buzzer;document.getElementById("headerHaptic").checked=!!config.settings.haptic;document.getElementById("darkModeToggle").checked=!!config.settings.darkMode;document.getElementById("indicatorColorInput").value=config.settings.indicatorColor||"#378add";document.getElementById("underglowColorInput").value=config.settings.underglowColor||"#7f77dd";applyTheme()}
 
-function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"system";applySettingsToControls();updateLayerUI();selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="key"){lastPhysical=msg.position;document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="action"){document.getElementById("diagEsp").textContent=`${msg.position} ${msg.actionType}: ${msg.action}`;document.getElementById("lastMsg").textContent=`ESP action ${msg.position}: ${msg.action}`}if(msg.type==="diag"){if(msg.espAction)document.getElementById("diagEsp").textContent=msg.espAction;if(msg.espSent)document.getElementById("diagNrf").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
+const lightbarState={brightness:80,warmth:40,on:true};
+let lightbarSendTimer=null;
+function lightColor(warm, bright) {
+  const t = warm / 100;
+  const b = bright / 100;
+  const r = Math.round(255 * (0.55 + 0.45 * t) * b);
+  const g = Math.round(210 * (0.75 + 0.1  * t) * b);
+  const bl = Math.round(170 * (1   - 0.75 * t) * b);
+  return { r, g, b: bl };
+}
+function rgba(warm, bright, alpha) {
+  const { r, g, b } = lightColor(warm, bright);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function toKelvin(warm) {
+  return `${Math.round(6500 - (warm / 100) * 3800)}K`;
+}
+function drawLightBar(ctx, W, H, bright, warm) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#14141a';
+  ctx.fillRect(0, 0, W, H);
+  const monW = Math.round(W * 0.77);
+  const monH = Math.round(H * 0.67);
+  const monX = (W - monW) / 2;
+  const monY = Math.round(H * 0.18);
+  const screenInset = 5;
+  if (bright > 0) {
+    const g = ctx.createRadialGradient(W/2, monY-10, 0, W/2, monY-10, 90+bright*0.4);
+    g.addColorStop(0,   rgba(warm, bright, 0.35));
+    g.addColorStop(0.5, rgba(warm, bright, 0.08));
+    g.addColorStop(1,   rgba(warm, bright, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, monY + monH/2);
+  }
+  if (bright > 0) {
+    const deskY = monY + monH + 4;
+    const g = ctx.createLinearGradient(0, deskY, 0, H);
+    g.addColorStop(0,   rgba(warm, bright, 0.28));
+    g.addColorStop(0.5, rgba(warm, bright, 0.06));
+    g.addColorStop(1,   rgba(warm, bright, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(monX-20, deskY, monW+40, H-deskY);
+  }
+  ctx.fillStyle = '#1e1e26';
+  ctx.beginPath();
+  ctx.roundRect(monX-3, monY-1, monW+6, monH+4, [3,3,0,0]);
+  ctx.fill();
+  const wash = bright > 0 ? Math.round(bright * 0.12) : 0;
+  ctx.fillStyle = `rgb(${18+wash},${18+Math.round(wash*0.8)},${26+Math.round(wash*0.6)})`;
+  ctx.beginPath();
+  ctx.roundRect(monX+screenInset, monY+screenInset, monW-screenInset*2, monH-screenInset*2, 2);
+  ctx.fill();
+  ctx.fillStyle = '#1a1a22';
+  ctx.fillRect(W/2-12, monY+monH+3, 24, 4);
+  ctx.fillRect(W/2-28, monY+monH+7, 56, 3);
+  const barW = Math.round(monW * 0.75);
+  const barH = 6;
+  const barX = W/2 - barW/2;
+  const barY = monY - 5;
+  ctx.fillStyle = '#252530';
+  ctx.beginPath();
+  ctx.roundRect(barX, barY, barW, barH, [3,3,2,2]);
+  ctx.fill();
+  if (bright > 0) {
+    const lg = ctx.createLinearGradient(barX+6, 0, barX+barW-6, 0);
+    lg.addColorStop(0,    rgba(warm, bright, 0.15));
+    lg.addColorStop(0.12, rgba(warm, bright, 1));
+    lg.addColorStop(0.5,  rgba(warm, bright, 1));
+    lg.addColorStop(0.88, rgba(warm, bright, 1));
+    lg.addColorStop(1,    rgba(warm, bright, 0.15));
+    ctx.fillStyle = lg;
+    ctx.fillRect(barX+6, barY+barH-2, barW-12, 2);
+  }
+  ctx.fillStyle = '#2e2e3c';
+  ctx.fillRect(W/2-2, barY-10, 4, 12);
+  ctx.beginPath();
+  ctx.roundRect(W/2-9, barY-12, 18, 5, 2);
+  ctx.fill();
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.fillText(`${Math.round(bright)}%`, W-8, H-8);
+}
+function updateLightbarWidget(sendUpdate=false){const canvas=document.getElementById("lightbarCanvas");if(!canvas)return;const bright=lightbarState.on?Number(lightbarState.brightness||0):0;const warm=Number(lightbarState.warmth||0);drawLightBar(canvas.getContext("2d"),canvas.width,canvas.height,bright,warm);document.getElementById("lightbarBrightness").value=lightbarState.brightness;document.getElementById("lightbarWarmth").value=warm;document.getElementById("lightbarBrightnessValue").textContent=Math.round(lightbarState.brightness);document.getElementById("lightbarWarmthValue").textContent=Math.round(warm);document.getElementById("lightbarKelvin").textContent=toKelvin(warm);document.getElementById("lightbarPowerDot").classList.toggle("off",!lightbarState.on);document.getElementById("lightbarPowerLabel").textContent=lightbarState.on?"on":"off";if(sendUpdate)scheduleLightbarSend()}
+function keyHasLightbarAction(k){const haystack=[k&&k.label,k&&k.type,k&&k.tap1,k&&k.tap2,k&&k.hold,k&&k.params,layer].join(" ").toLowerCase();return haystack.includes("lightbar")||haystack.includes("light bar")||haystack.includes("xiaomi")}
+function updateLightbarPanel(){const k=config.keys[selected]||{};const show=layer==="smart_home"||k.type==="smart_home"||keyHasLightbarAction(k);document.getElementById("lightbarPanel").classList.toggle("active",show);updateLightbarWidget(false)}
+function scheduleLightbarSend(){clearTimeout(lightbarSendTimer);lightbarSendTimer=setTimeout(()=>{setLightbarBrightness(lightbarState.brightness).catch(()=>{});setLightbarWarmth(lightbarState.warmth).catch(()=>{})},80)}
+async function setLightbarBrightness(value){const res=await fetch("/api/lightbar/brightness",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:Math.round(value)})});if(!res.ok)throw new Error("lightbar brightness failed");return res.json()}
+async function setLightbarWarmth(value){const kelvin=Math.round(6500-(value/100)*3800);const res=await fetch("/api/lightbar/temperature",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kelvin,warmth:Math.round(value)})});if(!res.ok)throw new Error("lightbar temperature failed");return res.json()}
+function applyLightbarState(msg){if(typeof msg.brightness==="number")lightbarState.brightness=Math.max(0,Math.min(100,msg.brightness));if(typeof msg.warmth==="number")lightbarState.warmth=Math.max(0,Math.min(100,msg.warmth));if(typeof msg.kelvin==="number")lightbarState.warmth=Math.max(0,Math.min(100,(6500-msg.kelvin)/3800*100));if(typeof msg.on==="boolean")lightbarState.on=msg.on;else lightbarState.on=lightbarState.brightness>0;updateLightbarWidget(false)}
+
+function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"system";applySettingsToControls();updateLayerUI();selectKey(0,false);document.getElementById("lastMsg").textContent="config loaded"}if(msg.type==="lightbar_state"){applyLightbarState(msg)}if(msg.type==="key"){lastPhysical=msg.position;document.getElementById("diagPhysical").textContent=msg.position;document.getElementById("lastMsg").textContent=`physical key ${msg.position} ${msg.pressed?"pressed":"released"}`;if(msg.pressed&&config.keys[msg.position]){selectKey(msg.position);toast("selected K"+msg.position)}}if(msg.type==="action"){document.getElementById("diagEsp").textContent=`${msg.position} ${msg.actionType}: ${msg.action}`;document.getElementById("lastMsg").textContent=`ESP action ${msg.position}: ${msg.action}`}if(msg.type==="diag"){if(msg.espAction)document.getElementById("diagEsp").textContent=msg.espAction;if(msg.espSent)document.getElementById("diagNrf").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("lastMsg").textContent=msg.message||"saved";toast("saved")}}catch{document.getElementById("lastMsg").textContent="message received"}}}
 function normalizeConfig(next){next.version=4;next.settings=Object.assign({indicatorColor:"#378add",underglowColor:"#7f77dd",animation:"rainbow",buzzer:true,haptic:false,darkMode:false},next.settings||{});next.layer=next.layer||"system";next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"empty",color:colors[i%colors.length],tap1:"NONE",tap2:"",hold:"",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
 function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
 async function saveConfig(){savePanel();const body={type:"set_config",config:config,selected:selected};const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const text=await res.text();try{const msg=JSON.parse(text);document.getElementById("lastMsg").textContent=msg.message||text}catch{document.getElementById("lastMsg").textContent=text}if(res.ok)toast("saved")}
@@ -281,9 +388,11 @@ document.getElementById("wifiCompact").onclick=e=>{if(e.target.closest("input,bu
 document.getElementById("wifiCompact").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleWifiDetails()}};
 ["headerBuzzer","headerHaptic","darkModeToggle","indicatorColorInput","underglowColorInput","keyColorInput","animationInput"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
 ["labelInput","typeInput","tap1","tap2","hold"].forEach(id=>document.getElementById(id).addEventListener("input",savePanel));
+document.getElementById("lightbarBrightness").addEventListener("input",e=>{lightbarState.brightness=Number(e.target.value);lightbarState.on=lightbarState.brightness>0;updateLightbarWidget(true)});
+document.getElementById("lightbarWarmth").addEventListener("input",e=>{lightbarState.warmth=Number(e.target.value);updateLightbarWidget(true)});
 document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{layer=el.dataset.layer;updateLayerUI();selectKey(selected);savePanel()});
 
-applySettingsToControls();setBatteryLevel(74);updateLayerUI();renderPad();selectKey(0,false);connect();loadNetwork().catch(()=>{});loadOutsideWeather();loadNews();
+applySettingsToControls();setBatteryLevel(74);updateLayerUI();renderPad();selectKey(0,false);updateLightbarWidget(false);connect();fetch("/api/lightbar/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyLightbarState(msg)}).catch(()=>{});loadNetwork().catch(()=>{});loadOutsideWeather();loadNews();
 </script>
 </body>
 </html>

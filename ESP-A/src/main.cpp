@@ -71,6 +71,9 @@ String lastEspAction = "-";
 uint32_t restartAt;
 String wifiSsid;
 String wifiPassword;
+uint8_t lightbarBrightness = 80;
+uint8_t lightbarWarmth = 40;
+bool lightbarOn = true;
 
 String get_preference_string(const char *key, const char *fallback = "") {
     return preferences.isKey(key) ? preferences.getString(key, fallback) : String(fallback);
@@ -141,6 +144,7 @@ bool buzzer_enabled() {
 }
 
 String json_escape(const String &value);
+void load_lightbar_state_preferences();
 
 bool is_keycode_type(const String &type) {
     String normalized = type;
@@ -402,11 +406,104 @@ void load_config() {
     preferences.begin("macropad", false);
     configJson = preferences.getString("config", DEFAULT_CONFIG);
     migrate_config_if_needed();
+    load_lightbar_state_preferences();
 }
 
 void save_config(const String &json) {
     configJson = json;
     preferences.putString("config", configJson);
+}
+
+void broadcast_lightbar_state() {
+    JsonDocument doc;
+    doc["type"] = "lightbar_state";
+    doc["brightness"] = lightbarBrightness;
+    doc["warmth"] = lightbarWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(lightbarWarmth) * 3800 / 100;
+    doc["on"] = lightbarOn;
+
+    String out;
+    serializeJson(doc, out);
+    webSocket.broadcastTXT(out);
+}
+
+void send_lightbar_state_http() {
+    JsonDocument doc;
+    doc["type"] = "lightbar_state";
+    doc["brightness"] = lightbarBrightness;
+    doc["warmth"] = lightbarWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(lightbarWarmth) * 3800 / 100;
+    doc["on"] = lightbarOn;
+
+    String out;
+    serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+bool parse_request_json(JsonDocument &doc) {
+    String body = server.arg("plain");
+
+    if (body.length() == 0) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"empty body\"}");
+        return false;
+    }
+
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+        server.send(400, "application/json", "{\"type\":\"error\",\"message\":\"invalid json\"}");
+        return false;
+    }
+
+    return true;
+}
+
+void save_lightbar_state_preferences() {
+    preferences.putUChar("lb_bright", lightbarBrightness);
+    preferences.putUChar("lb_warmth", lightbarWarmth);
+    preferences.putBool("lb_on", lightbarOn);
+}
+
+void load_lightbar_state_preferences() {
+    lightbarBrightness = preferences.getUChar("lb_bright", lightbarBrightness);
+    lightbarWarmth = preferences.getUChar("lb_warmth", lightbarWarmth);
+    lightbarOn = preferences.getBool("lb_on", lightbarOn);
+}
+
+void handle_lightbar_brightness() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    int value = doc["value"] | lightbarBrightness;
+    lightbarBrightness = constrain(value, 0, 100);
+    lightbarOn = lightbarBrightness > 0;
+    save_lightbar_state_preferences();
+    broadcast_lightbar_state();
+    send_lightbar_state_http();
+}
+
+void handle_lightbar_temperature() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    if (doc["warmth"].is<int>()) {
+        int warmth = doc["warmth"] | lightbarWarmth;
+        lightbarWarmth = constrain(warmth, 0, 100);
+    } else {
+        int kelvin = doc["kelvin"] | (6500 - static_cast<uint16_t>(lightbarWarmth) * 3800 / 100);
+        kelvin = constrain(kelvin, 2700, 6500);
+        lightbarWarmth = constrain((6500 - kelvin) * 100 / 3800, 0, 100);
+    }
+
+    save_lightbar_state_preferences();
+    broadcast_lightbar_state();
+    send_lightbar_state_http();
 }
 
 void send_config(uint8_t client) {
@@ -749,6 +846,9 @@ void start_web_gui() {
     server.on("/api/wifi/test", HTTP_POST, test_wifi_settings);
     server.on("/api/reboot", HTTP_POST, reboot_esp);
     server.on("/api/nrf/bootloader", HTTP_POST, request_nrf_bootloader);
+    server.on("/api/lightbar/state", HTTP_GET, send_lightbar_state_http);
+    server.on("/api/lightbar/brightness", HTTP_POST, handle_lightbar_brightness);
+    server.on("/api/lightbar/temperature", HTTP_POST, handle_lightbar_temperature);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
