@@ -8,6 +8,7 @@ Initial ESP32-S3 bring-up firmware for Side-B, the display half of the split mac
 - nRF52840 UART link
 - TFT LCD SPI pin definitions and backlight control
 - nRF24L01+ SPI pin definitions
+- MicroSD local NAS over Wi-Fi AP
 - INA219/SHT40 I2C bus scan
 - 16 WS2812-2121 LEDs on ESP GPIO2
 
@@ -26,8 +27,8 @@ Initial ESP32-S3 bring-up firmware for Side-B, the display half of the split mac
 
 ### TFT LCD
 
-- CS `GPIO46`
-- DC `GPIO03`
+- CS `GPIO09`
+- DC `GPIO13`
 - RST `GPIO08`
 - MOSI/SDA `GPIO18`
 - SCK/SCL `GPIO17`
@@ -36,11 +37,30 @@ Initial ESP32-S3 bring-up firmware for Side-B, the display half of the split mac
 ### nRF24L01+
 
 - SCK `GPIO05`
-- IRQ `GPIO41`
-- MISO `GPIO42`
+- IRQ `GPIO39`
+- MISO `GPIO12`
 - CE `GPIO01`
-- CSN `GPIO44`
-- MOSI `GPIO43`
+- CSN `GPIO11`
+- MOSI `GPIO10`
+
+### MicroSD NAS
+
+- CS `GPIO35`
+- MOSI `GPIO15`
+- CLK `GPIO07`
+- MISO `GPIO04`
+- VCC `3.3V`
+- GND `GND`
+
+The current ESP-B bring-up firmware mounts the MicroSD card and starts a local Wi-Fi AP:
+
+- SSID: `ZMK-SideB-NAS`
+- Password: `12345678`
+- URL: `http://192.168.4.1/`
+
+The browser UI supports file listing, upload, download, folder creation, and delete.
+
+For this NAS bring-up build, LCD and Xiaomi nRF24 pins are kept in safe idle states but their SPI devices are not initialized. This avoids SPI host conflicts while the MicroSD storage path is being validated.
 
 ### Sensors
 
