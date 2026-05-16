@@ -77,6 +77,7 @@ bool lightbarOn = true;
 uint8_t lightstripBrightness = 80;
 uint8_t lightstripWarmth = 20;
 bool lightstripOn = true;
+uint8_t deskHeightCm = 72;
 
 String get_preference_string(const char *key, const char *fallback = "") {
     return preferences.isKey(key) ? preferences.getString(key, fallback) : String(fallback);
@@ -537,6 +538,54 @@ void send_lightstrip_state_http() {
     server.send(200, "application/json", out);
 }
 
+void send_nas_storage_http() {
+    JsonDocument doc;
+    doc["type"] = "nas_storage";
+    doc["used_bytes"] = 13UL * 1024UL * 1024UL;
+    doc["total_bytes"] = 32UL * 1024UL * 1024UL;
+    doc["used_pct"] = 42;
+
+    String out;
+    serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+void broadcast_desk_state() {
+    JsonDocument doc;
+    doc["type"] = "desk_height";
+    doc["height_cm"] = deskHeightCm;
+    doc["position_pct"] = constrain((static_cast<int>(deskHeightCm) - 62) * 100 / 58, 0, 100);
+
+    String out;
+    serializeJson(doc, out);
+    webSocket.broadcastTXT(out);
+}
+
+void send_desk_state_http() {
+    JsonDocument doc;
+    doc["type"] = "desk_height";
+    doc["height_cm"] = deskHeightCm;
+    doc["position_pct"] = constrain((static_cast<int>(deskHeightCm) - 62) * 100 / 58, 0, 100);
+
+    String out;
+    serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+void handle_desk_height() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    int height = doc["height_cm"] | deskHeightCm;
+    deskHeightCm = constrain(height, 62, 120);
+    preferences.putUChar("desk_cm", deskHeightCm);
+    broadcast_desk_state();
+    send_desk_state_http();
+}
+
 void save_lightstrip_state_preferences() {
     preferences.putUChar("ls_bright", lightstripBrightness);
     preferences.putUChar("ls_warmth", lightstripWarmth);
@@ -547,6 +596,7 @@ void load_lightstrip_state_preferences() {
     lightstripBrightness = preferences.getUChar("ls_bright", lightstripBrightness);
     lightstripWarmth = preferences.getUChar("ls_warmth", lightstripWarmth);
     lightstripOn = preferences.getBool("ls_on", lightstripOn);
+    deskHeightCm = preferences.getUChar("desk_cm", deskHeightCm);
 }
 
 void handle_lightstrip_brightness() {
@@ -931,6 +981,9 @@ void start_web_gui() {
     server.on("/api/lightstrip/state", HTTP_GET, send_lightstrip_state_http);
     server.on("/api/lightstrip/brightness", HTTP_POST, handle_lightstrip_brightness);
     server.on("/api/lightstrip/temperature", HTTP_POST, handle_lightstrip_temperature);
+    server.on("/api/nas/storage", HTTP_GET, send_nas_storage_http);
+    server.on("/api/desk/state", HTTP_GET, send_desk_state_http);
+    server.on("/api/desk/height", HTTP_POST, handle_desk_height);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
