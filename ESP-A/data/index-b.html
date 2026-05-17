@@ -54,14 +54,20 @@
   }
 
   .logo {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
     margin-right: 20px;
   }
-  .logo span { color: var(--accent); }
+  .brand-logo {
+    width: 150px;
+    height: 44px;
+    display: block;
+  }
+  .brand-logo .b-name { fill: var(--text); }
+  .brand-logo .b-rule { stroke: var(--border2); }
+  .brand-logo .b-plus,
+  .brand-logo .b-sub { fill: var(--text3); }
+  .brand-logo .b-inset { opacity: 0.2; }
 
   .status-pill {
     display: flex;
@@ -684,7 +690,23 @@
 
 <!-- TOPBAR -->
 <header>
-  <div class="logo">ZMK<span>·</span>BLE <span style="color:var(--text3);font-weight:300">remapper</span></div>
+  <div class="logo">
+    <svg class="brand-logo" viewBox="0 0 260 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shahab Macropad">
+      <defs>
+        <mask id="logoBMaskB">
+          <rect x="0" y="0" width="260" height="80" fill="white"/>
+          <path d="M41 24 h7 v13 h13 v7 h-13 v13 h-7 v-13 h-13 v-7 h13z" fill="black" class="b-inset"/>
+          <path d="M201 36 h31 v8 h-31z" fill="black" class="b-inset"/>
+        </mask>
+      </defs>
+      <g mask="url(#logoBMaskB)">
+        <rect x="12" y="12" width="64" height="56" rx="8" fill="none" class="b-rule" stroke-width="3"/>
+        <path d="M41 24 h7 v13 h13 v7 h-13 v13 h-7 v-13 h-13 v-7 h13z" class="b-plus"/>
+        <path d="M201 36 h31 v8 h-31z" class="b-sub"/>
+      </g>
+      <text x="91" y="50" font-family="IBM Plex Mono, SFMono-Regular, Menlo, monospace" font-size="26" font-weight="800" letter-spacing="1.5" class="b-name">SHAHAB</text>
+    </svg>
+  </div>
 
   <div class="status-pill" id="conn">
     <div class="dot"></div>
@@ -866,6 +888,24 @@
     <div class="smart-status"><span id="deskModeB">sitting</span><strong id="deskHeightB">62 cm</strong></div>
   </div>
 
+  <div class="panel-section smart-widget">
+    <div class="panel-title">Desk Light</div>
+    <canvas class="smart-canvas" id="deskLightCanvasB" height="130"></canvas>
+    <div class="scene-row">
+      <button class="scene-btn active" type="button" onclick="deskLightSceneB(this,80,20)">reading</button>
+      <button class="scene-btn" type="button" onclick="deskLightSceneB(this,100,85)">warm eve</button>
+      <button class="scene-btn" type="button" onclick="deskLightSceneB(this,45,0)">cool day</button>
+      <button class="scene-btn" type="button" onclick="deskLightSceneB(this,18,55)">movie</button>
+      <button class="scene-btn" type="button" onclick="deskLightSceneB(this,100,100)">candle</button>
+      <button class="scene-btn" type="button" onclick="deskLightSceneB(this,0,0)">off</button>
+    </div>
+    <div class="smart-controls">
+      <label class="smart-row"><span>brightness</span><input id="deskLightBriB" type="range" min="0" max="100" value="80" oninput="deskLightUpdateB(true)"><span class="smart-val" id="deskLightBriValB">80%</span></label>
+      <label class="smart-row"><span>warm/cool</span><input id="deskLightTmpB" type="range" min="0" max="100" value="20" oninput="deskLightUpdateB(true)"><span class="smart-val" id="deskLightTmpValB">5740K</span></label>
+    </div>
+    <div class="smart-status"><span><i class="smart-dot" id="deskLightDotB"></i><span id="deskLightStatusB">on</span></span><strong id="deskLightKelvinB">5740K</strong></div>
+  </div>
+
   <div class="panel-section smart-home-hidden">
     <div class="panel-title">News</div>
     <div class="news-placeholder">news unavailable</div>
@@ -959,11 +999,11 @@ function normalizeAction(v){const raw=String(v||"").trim();const s=raw.toUpperCa
 function normalizeConfig(next){next=next||{};next.version=4;next.settings=Object.assign({indicatorColor:"#1a2d6b",underglowColor:"#00d4aa",animation:"rainbow",buzzer:true,haptic:false,darkMode:true},next.settings||{});next.layer=next.layer||"trading";next.keys=next.keys||[];for(let i=0;i<keyCount;i++){next.keys[i]=Object.assign({id:i,label:"K"+i,type:"empty",color:colors[i%colors.length],tap1:"NONE",tap2:"",hold:"",params:""},next.keys[i]||{})}positions.forEach(p=>{if(p&&p.label&&!next.keys[p.id].label.startsWith(p.label))next.keys[p.id].label=p.label});return next}
 
 function renderKeys(){const grid=document.getElementById("keyGrid");grid.innerHTML="";positions.forEach(p=>{if(!p){const ph=document.createElement("div");ph.className="key-placeholder";grid.appendChild(ph);return}const k=config.keys[p.id];const el=document.createElement("button");el.type="button";el.className=keyClass(k,p.id);el.dataset.pos=p.id;el.innerHTML=`<div class="key-name">${escapeHtml(k.label||("K"+p.id))}</div><div class="key-action">${escapeHtml(shortAction(k))}<br>${escapeHtml(k.tap2||"—")}</div><div class="key-num">${p.id}</div>`;el.onclick=()=>selectKey(p.id);grid.appendChild(el)})}
-function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));const name=layerLabels[layer]||layer;document.getElementById("devLayer").textContent=name.toUpperCase();document.getElementById("devLayerBottom").textContent=name.toUpperCase()+" LAYER";document.getElementById("rightPanelB").classList.toggle("smart-home-active",layer==="smart_home");if(layer==="smart_home"){startSmartWidgetsB();pollNASB().catch(()=>{})}}
+function updateLayerUI(){document.querySelectorAll("[data-layer]").forEach(el=>el.classList.toggle("active",el.dataset.layer===layer));const name=layerLabels[layer]||layer;document.getElementById("devLayer").textContent=name.toUpperCase();document.getElementById("devLayerBottom").textContent=name.toUpperCase()+" LAYER";document.getElementById("rightPanelB").classList.toggle("smart-home-active",layer==="smart_home");if(layer==="smart_home"){startSmartWidgetsB();setTimeout(()=>deskLightUpdateB(false),30);pollNASB().catch(()=>{})}}
 function applySettings(){const s=config.settings||{};document.getElementById("buzzerToggle").classList.toggle("on",!!s.buzzer);document.getElementById("hapticToggle").classList.toggle("on",!!s.haptic);document.getElementById("darkToggle").classList.toggle("on",!!s.darkMode);document.getElementById("indicatorColorInput").value=s.indicatorColor||"#1a2d6b";document.getElementById("underglowColorInput").value=s.underglowColor||"#00d4aa";document.getElementById("indicatorSwatch").style.background=document.getElementById("indicatorColorInput").value;document.getElementById("underglowSwatch").style.background=document.getElementById("underglowColorInput").value}
 function savePanel(){const k=config.keys[selected];if(!k)return;k.label=document.getElementById("labelInput").value||("K"+selected);k.type=document.getElementById("typeInput").value;k.tap1=normalizeAction(document.getElementById("tap1").value);k.tap2=normalizeAction(document.getElementById("tap2").value);k.hold=normalizeAction(document.getElementById("hold").value);config.version=4;config.layer=layer;config.settings.buzzer=document.getElementById("buzzerToggle").classList.contains("on");config.settings.haptic=document.getElementById("hapticToggle").classList.contains("on");config.settings.darkMode=document.getElementById("darkToggle").classList.contains("on");config.settings.indicatorColor=document.getElementById("indicatorColorInput").value;config.settings.underglowColor=document.getElementById("underglowColorInput").value;renderKeys()}
 function selectKey(pos,save=true){if(save)savePanel();selected=pos;const k=config.keys[pos];const name=k.label||("K"+pos);document.getElementById("ck-badge").textContent=name;document.getElementById("ck-name").textContent=name;document.getElementById("ck-sub").textContent=`position ${pos} · ${layerLabels[layer]||layer}`;document.getElementById("diagSelected").textContent=pos;document.getElementById("labelInput").value=name;document.getElementById("typeInput").value=k.type||"empty";document.getElementById("tap1").value=k.tap1||"NONE";document.getElementById("tap2").value=k.tap2||"";document.getElementById("hold").value=k.hold||"";renderKeys()}
-const lightbarStateB={brightness:80,warmth:40,on:true},lightstripStateB={brightness:80,warmth:20,on:true};let lbTimerB=null,lsTimerB=null,smartStartedB=false;
+const lightbarStateB={brightness:80,warmth:40,on:true},lightstripStateB={brightness:80,warmth:20,on:true},deskLightStateB={brightness:80,warmth:20,on:true};let lbTimerB=null,lsTimerB=null,deskLightTimerB=null,smartStartedB=false;
 function smartKelvinB(warm){return Math.round(6500-(warm/100)*3800)+"K"}
 function smartColorB(warm,bright){const t=warm/100,b=bright/100;return{r:Math.round(255*(.55+.45*t)*b),g:Math.round(210*(.75+.1*t)*b),b:Math.round(170*(1-.75*t)*b)}}
 function smartRgbaB(warm,bright,a){const c=smartColorB(warm,bright);return`rgba(${c.r},${c.g},${c.b},${a})`}
@@ -974,8 +1014,14 @@ function lsColorB(warm,bright){const t=warm/100,b=bright/100;return{r:Math.round
 function lsRgbaB(warm,bright,a){const c=lsColorB(warm,bright);return`rgba(${c.r},${c.g},${c.b},${a})`}
 function drawLSB(){const canvas=document.getElementById("lsCanvasB"),ctx=canvas.getContext("2d"),W=canvas.clientWidth||260,H=130,dpr=window.devicePixelRatio||1;if(canvas.width!==Math.round(W*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}ctx.setTransform(dpr,0,0,dpr,0,0);const bright=lightstripStateB.on?lightstripStateB.brightness:0,warm=lightstripStateB.warmth,wallH=Math.round(H*.62),stripY=Math.round(H*.10),stripH=6;ctx.clearRect(0,0,W,H);ctx.fillStyle="#12141a";ctx.fillRect(0,0,W,wallH);ctx.fillStyle="#0d0f12";ctx.fillRect(0,wallH,W,H-wallH);ctx.fillStyle="#1a1c22";ctx.fillRect(0,wallH-2,W,4);if(bright>0){const pool=ctx.createRadialGradient(W/2,stripY+stripH,0,W/2,stripY+stripH,H*.95);pool.addColorStop(0,lsRgbaB(warm,bright,.55));pool.addColorStop(.22,lsRgbaB(warm,bright,.22));pool.addColorStop(.55,lsRgbaB(warm,bright,.06));pool.addColorStop(1,lsRgbaB(warm,bright,0));ctx.fillStyle=pool;ctx.fillRect(0,stripY,W,H)}ctx.fillStyle="#1c1e26";ctx.beginPath();ctx.roundRect(0,stripY,W,stripH,[0,0,2,2]);ctx.fill();if(bright>0){const led=ctx.createLinearGradient(0,0,W,0);led.addColorStop(0,lsRgbaB(warm,bright,.05));led.addColorStop(.05,lsRgbaB(warm,bright,1));led.addColorStop(.95,lsRgbaB(warm,bright,1));led.addColorStop(1,lsRgbaB(warm,bright,.05));ctx.fillStyle=led;ctx.fillRect(4,stripY+stripH-2,W-8,2)}ctx.font="10px monospace";ctx.textAlign="right";ctx.fillStyle="rgba(255,255,255,.2)";ctx.fillText(Math.round(bright)+"%",W-8,H-8)}
 function lsUpdateB(send=false){lightstripStateB.brightness=+document.getElementById("lsBriB").value;lightstripStateB.warmth=+document.getElementById("lsTmpB").value;lightstripStateB.on=lightstripStateB.brightness>0;document.getElementById("lsBriValB").textContent=Math.round(lightstripStateB.brightness)+"%";document.getElementById("lsTmpValB").textContent=smartKelvinB(lightstripStateB.warmth);document.getElementById("lsKelvinB").textContent=smartKelvinB(lightstripStateB.warmth);document.getElementById("lsStatusB").textContent=lightstripStateB.on?"on":"off";document.getElementById("lsDotB").classList.toggle("off",!lightstripStateB.on);drawLSB();if(send){clearTimeout(lsTimerB);lsTimerB=setTimeout(()=>{fetch("/api/lightstrip/brightness",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:Math.round(lightstripStateB.brightness)})}).catch(()=>{});fetch("/api/lightstrip/temperature",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({warmth:Math.round(lightstripStateB.warmth)})}).catch(()=>{})},80)}}
-function lsSceneB(el,bri,warm){document.querySelectorAll(".scene-btn").forEach(s=>s.classList.remove("active"));el.classList.add("active");document.getElementById("lsBriB").value=bri;document.getElementById("lsTmpB").value=warm;lsUpdateB(true)}
+function lsSceneB(el,bri,warm){el.closest(".panel-section").querySelectorAll(".scene-btn").forEach(s=>s.classList.remove("active"));el.classList.add("active");document.getElementById("lsBriB").value=bri;document.getElementById("lsTmpB").value=warm;lsUpdateB(true)}
 function applyLightstripStateB(msg){if(typeof msg.brightness==="number")document.getElementById("lsBriB").value=Math.max(0,Math.min(100,msg.brightness));if(typeof msg.warmth==="number")document.getElementById("lsTmpB").value=Math.max(0,Math.min(100,msg.warmth));if(typeof msg.kelvin==="number")document.getElementById("lsTmpB").value=Math.max(0,Math.min(100,(6500-msg.kelvin)/3800*100));lsUpdateB(false)}
+function deskLightColorB(warm,bright){const t=warm/100,b=bright/100;return{r:Math.round(255*(.48+.52*t)*b),g:Math.round(205*(.70+.13*t)*b),b:Math.round(185*(1-.82*t)*b)}}
+function deskLightRgbaB(warm,bright,a){const c=deskLightColorB(warm,bright);return`rgba(${c.r},${c.g},${c.b},${a})`}
+function drawDeskLightB(){const canvas=document.getElementById("deskLightCanvasB"),ctx=canvas.getContext("2d"),W=canvas.clientWidth||260,H=130,dpr=window.devicePixelRatio||1;if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}ctx.setTransform(dpr,0,0,dpr,0,0);const bright=deskLightStateB.on?deskLightStateB.brightness:0,warm=deskLightStateB.warmth,pad=10,stripY=38,stripH=8;ctx.clearRect(0,0,W,H);ctx.fillStyle="#101119";ctx.fillRect(0,0,W,H);ctx.fillStyle="#171923";ctx.fillRect(pad,H*.58,W-pad*2,2);if(bright>0){const glow=ctx.createLinearGradient(0,stripY+stripH,0,H);glow.addColorStop(0,deskLightRgbaB(warm,bright,.75));glow.addColorStop(.18,deskLightRgbaB(warm,bright,.38));glow.addColorStop(.45,deskLightRgbaB(warm,bright,.14));glow.addColorStop(.75,deskLightRgbaB(warm,bright,.03));glow.addColorStop(1,deskLightRgbaB(warm,bright,0));ctx.fillStyle=glow;ctx.fillRect(pad,stripY+stripH,W-pad*2,H-stripY-stripH);const up=ctx.createLinearGradient(0,stripY,0,0);up.addColorStop(0,deskLightRgbaB(warm,bright,.10));up.addColorStop(1,deskLightRgbaB(warm,bright,0));ctx.fillStyle=up;ctx.fillRect(pad,0,W-pad*2,stripY)}ctx.fillStyle="#1f222c";ctx.beginPath();ctx.roundRect(pad,stripY,W-pad*2,stripH,[3,3,2,2]);ctx.fill();if(bright>0){const led=ctx.createLinearGradient(pad,0,W-pad,0);led.addColorStop(0,deskLightRgbaB(warm,bright,.02));led.addColorStop(.04,deskLightRgbaB(warm,bright,1));led.addColorStop(.96,deskLightRgbaB(warm,bright,1));led.addColorStop(1,deskLightRgbaB(warm,bright,.02));ctx.fillStyle=led;ctx.fillRect(pad+4,stripY+stripH-2.5,W-pad*2-8,2.5)}ctx.font="600 14px -apple-system,BlinkMacSystemFont,sans-serif";ctx.textAlign="center";ctx.fillStyle=bright>0?deskLightRgbaB(warm,Math.min(bright+30,100),.85):"rgba(255,255,255,.18)";ctx.fillText(smartKelvinB(warm),W/2,stripY-12);ctx.font="10px monospace";ctx.textAlign="right";ctx.fillStyle="rgba(255,255,255,.15)";ctx.fillText(Math.round(bright)+"%",W-10,H-8)}
+function deskLightUpdateB(send=false){deskLightStateB.brightness=+document.getElementById("deskLightBriB").value;deskLightStateB.warmth=+document.getElementById("deskLightTmpB").value;deskLightStateB.on=deskLightStateB.brightness>0;document.getElementById("deskLightBriValB").textContent=Math.round(deskLightStateB.brightness)+"%";document.getElementById("deskLightTmpValB").textContent=smartKelvinB(deskLightStateB.warmth);document.getElementById("deskLightKelvinB").textContent=smartKelvinB(deskLightStateB.warmth);document.getElementById("deskLightStatusB").textContent=deskLightStateB.on?"on":"off";document.getElementById("deskLightDotB").classList.toggle("off",!deskLightStateB.on);drawDeskLightB();if(send){clearTimeout(deskLightTimerB);deskLightTimerB=setTimeout(()=>{fetch("/api/desklight/brightness",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:Math.round(deskLightStateB.brightness)})}).catch(()=>{});fetch("/api/desklight/temperature",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({warmth:Math.round(deskLightStateB.warmth),kelvin:Math.round(6500-(deskLightStateB.warmth/100)*3800)})}).catch(()=>{})},80)}}
+function deskLightSceneB(el,bri,warm){el.closest(".panel-section").querySelectorAll(".scene-btn").forEach(s=>s.classList.remove("active"));el.classList.add("active");document.getElementById("deskLightBriB").value=bri;document.getElementById("deskLightTmpB").value=warm;deskLightUpdateB(true)}
+function applyDeskLightStateB(msg){if(typeof msg.brightness==="number")document.getElementById("deskLightBriB").value=Math.max(0,Math.min(100,msg.brightness));if(typeof msg.warmth==="number")document.getElementById("deskLightTmpB").value=Math.max(0,Math.min(100,msg.warmth));if(typeof msg.kelvin==="number")document.getElementById("deskLightTmpB").value=Math.max(0,Math.min(100,(6500-msg.kelvin)/3800*100));deskLightUpdateB(false)}
 const NAS_COLS_B=10,NAS_ROWS_B=5,NAS_TOTAL_B=50,NAS_BW_B=16,NAS_BH_B=14,NAS_GAP_B=3,NAS_TOTAL_W_B=NAS_COLS_B*(NAS_BW_B+NAS_GAP_B)-NAS_GAP_B,NAS_TOTAL_H_B=NAS_ROWS_B*(NAS_BH_B+NAS_GAP_B)-NAS_GAP_B,nasCellFillB=new Array(NAS_TOTAL_B).fill(0),nasCellPhaseB=Array.from({length:NAS_TOTAL_B},(_,i)=>i*.73+Math.random()*1.5);let nasWaveTickB=0,nasTargetPctB=42,nasAnimStartedB=false,nasPollTimerB=null;
 function nasTintB(pct){if(pct>88)return["#e85050","rgba(232,80,80,"];if(pct>70)return["#f5a623","rgba(245,166,35,"];return["#4a9eff","rgba(74,158,255,"]}
 function nasTargetsB(pct){const result=new Array(NAS_TOTAL_B).fill(0);let remaining=NAS_TOTAL_B*pct/100;for(let row=NAS_ROWS_B-1;row>=0;row--){for(let col=0;col<NAS_COLS_B;col++){const idx=row*NAS_COLS_B+col;if(remaining>=1){result[idx]=1;remaining-=1}else if(remaining>0){result[idx]=remaining;remaining=0}}}return result}
@@ -997,10 +1043,10 @@ function deskPresetB(pct){setDeskPositionB(pct,true)}
 function deskNudgeB(delta){setDeskPositionB(deskTargetPctB+delta,true)}
 async function restoreDeskPositionB(){const res=await fetch("/api/desk/state");if(!res.ok)return;const data=await res.json();if(typeof data.height_cm==="number")setDeskPositionB(cmToPctB(data.height_cm),false)}
 function applyDeskStateB(msg){if(typeof msg.height_cm==="number")setDeskPositionB(cmToPctB(msg.height_cm),false);else if(typeof msg.position_pct==="number")setDeskPositionB(msg.position_pct,false)}
-function startSmartWidgetsB(){if(smartStartedB)return;smartStartedB=true;drawLightBarB();lsUpdateB(false);startNASWidgetB();startDeskWidgetB()}
+function startSmartWidgetsB(){if(smartStartedB)return;smartStartedB=true;drawLightBarB();lsUpdateB(false);deskLightUpdateB(false);startNASWidgetB();startDeskWidgetB()}
 function setConn(ok){const el=document.getElementById("conn");el.classList.toggle("online",ok);document.getElementById("connText").textContent=ok?"online":"offline"}
 function send(obj){if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true}return false}
-function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"trading";applySettings();updateLayerUI();selectKey(selected,false)}if(msg.type==="lightbar_state")applyLightbarStateB(msg);if(msg.type==="lightstrip_state")applyLightstripStateB(msg);if(msg.type==="nas_storage")setNASUsedB(msg.used_pct);if(msg.type==="desk_height")applyDeskStateB(msg);if(msg.type==="key"){document.getElementById("diagPhysical").textContent=msg.position;if(msg.pressed&&config.keys[msg.position])selectKey(msg.position)}if(msg.type==="action"){document.getElementById("diagEsp").textContent=`${msg.position} ${msg.actionType}: ${msg.action}`}if(msg.type==="diag"){if(msg.espAction)document.getElementById("diagEsp").textContent=msg.espAction;if(msg.espSent)document.getElementById("diagNrf").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("diagEsp").textContent=msg.message||"saved"}}catch{}}}
+function connect(){ws=new WebSocket(`ws://${location.hostname}:81/`);ws.onopen=()=>{setConn(true);send({type:"get_config"})};ws.onclose=()=>{setConn(false);setTimeout(connect,1500)};ws.onerror=()=>setConn(false);ws.onmessage=e=>{try{const msg=JSON.parse(e.data);if(msg.type==="config"&&msg.config){config=normalizeConfig(msg.config);layer=config.layer||"trading";applySettings();updateLayerUI();selectKey(selected,false)}if(msg.type==="lightbar_state")applyLightbarStateB(msg);if(msg.type==="lightstrip_state")applyLightstripStateB(msg);if(msg.type==="desklight_state")applyDeskLightStateB(msg);if(msg.type==="nas_storage")setNASUsedB(msg.used_pct);if(msg.type==="desk_height")applyDeskStateB(msg);if(msg.type==="key"){document.getElementById("diagPhysical").textContent=msg.position;if(msg.pressed&&config.keys[msg.position])selectKey(msg.position)}if(msg.type==="action"){document.getElementById("diagEsp").textContent=`${msg.position} ${msg.actionType}: ${msg.action}`}if(msg.type==="diag"){if(msg.espAction)document.getElementById("diagEsp").textContent=msg.espAction;if(msg.espSent)document.getElementById("diagNrf").textContent=msg.espSent;if(msg.nrfStored)document.getElementById("diagNrf").textContent=msg.nrfStored}if(msg.type==="ok"){document.getElementById("diagEsp").textContent=msg.message||"saved"}}catch{}}}
 async function saveConfig(){savePanel();const res=await fetch("/api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"set_config",config,selected})});const msg=await res.json();document.getElementById("diagEsp").textContent=msg.message||"saved"}
 async function loadNetwork(){try{const res=await fetch("/api/network");const msg=await res.json();const connected=!!msg.homeIp;document.getElementById("wifiSsidLabel").textContent=connected?msg.homeSsid:(msg.apSsid||"setup AP");document.getElementById("wifiIpLabel").textContent=connected?msg.homeIp:(msg.apIp||"192.168.4.1")}catch{}}
 function exportConfig(){savePanel();const blob=new Blob([JSON.stringify(config,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="macropad-config.json";a.click();URL.revokeObjectURL(a.href)}
@@ -1017,7 +1063,7 @@ document.getElementById("lightbarBrightnessB").oninput=e=>{lightbarStateB.bright
 document.getElementById("lightbarWarmthB").oninput=e=>{lightbarStateB.warmth=+e.target.value;updateLightbarB(true)};
 document.querySelectorAll("[data-layer]").forEach(el=>el.onclick=()=>{layer=el.dataset.layer;updateLayerUI();savePanel();selectKey(selected,false)});
 
-config=normalizeConfig(config);applySettings();updateLayerUI();renderKeys();selectKey(0,false);updateLightbarB(false);lsUpdateB(false);connect();fetch("/api/lightbar/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyLightbarStateB(msg)}).catch(()=>{});fetch("/api/lightstrip/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyLightstripStateB(msg)}).catch(()=>{});loadNetwork();
+config=normalizeConfig(config);applySettings();updateLayerUI();renderKeys();selectKey(0,false);updateLightbarB(false);lsUpdateB(false);deskLightUpdateB(false);connect();fetch("/api/lightbar/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyLightbarStateB(msg)}).catch(()=>{});fetch("/api/lightstrip/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyLightstripStateB(msg)}).catch(()=>{});fetch("/api/desklight/state").then(r=>r.ok?r.json():null).then(msg=>{if(msg)applyDeskLightStateB(msg)}).catch(()=>{});loadNetwork();
 </script>
 </body>
 </html>

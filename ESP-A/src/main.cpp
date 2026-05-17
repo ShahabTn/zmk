@@ -77,6 +77,9 @@ bool lightbarOn = true;
 uint8_t lightstripBrightness = 80;
 uint8_t lightstripWarmth = 20;
 bool lightstripOn = true;
+uint8_t deskLightBrightness = 80;
+uint8_t deskLightWarmth = 20;
+bool deskLightOn = true;
 uint8_t deskHeightCm = 72;
 
 String get_preference_string(const char *key, const char *fallback = "") {
@@ -586,6 +589,74 @@ void handle_desk_height() {
     send_desk_state_http();
 }
 
+void broadcast_desk_light_state() {
+    JsonDocument doc;
+    doc["type"] = "desklight_state";
+    doc["brightness"] = deskLightBrightness;
+    doc["warmth"] = deskLightWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(deskLightWarmth) * 3800 / 100;
+    doc["on"] = deskLightOn;
+
+    String out;
+    serializeJson(doc, out);
+    webSocket.broadcastTXT(out);
+}
+
+void send_desk_light_state_http() {
+    JsonDocument doc;
+    doc["type"] = "desklight_state";
+    doc["brightness"] = deskLightBrightness;
+    doc["warmth"] = deskLightWarmth;
+    doc["kelvin"] = 6500 - static_cast<uint16_t>(deskLightWarmth) * 3800 / 100;
+    doc["on"] = deskLightOn;
+
+    String out;
+    serializeJson(doc, out);
+    server.send(200, "application/json", out);
+}
+
+void save_desk_light_state_preferences() {
+    preferences.putUChar("dl_bright", deskLightBrightness);
+    preferences.putUChar("dl_warmth", deskLightWarmth);
+    preferences.putBool("dl_on", deskLightOn);
+}
+
+void handle_desk_light_brightness() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    int value = doc["value"] | deskLightBrightness;
+    deskLightBrightness = constrain(value, 0, 100);
+    deskLightOn = deskLightBrightness > 0;
+    save_desk_light_state_preferences();
+    broadcast_desk_light_state();
+    send_desk_light_state_http();
+}
+
+void handle_desk_light_temperature() {
+    JsonDocument doc;
+
+    if (!parse_request_json(doc)) {
+        return;
+    }
+
+    if (doc["warmth"].is<int>()) {
+        int warmth = doc["warmth"] | deskLightWarmth;
+        deskLightWarmth = constrain(warmth, 0, 100);
+    } else {
+        int kelvin = doc["kelvin"] | (6500 - static_cast<uint16_t>(deskLightWarmth) * 3800 / 100);
+        kelvin = constrain(kelvin, 2700, 6500);
+        deskLightWarmth = constrain((6500 - kelvin) * 100 / 3800, 0, 100);
+    }
+
+    save_desk_light_state_preferences();
+    broadcast_desk_light_state();
+    send_desk_light_state_http();
+}
+
 void save_lightstrip_state_preferences() {
     preferences.putUChar("ls_bright", lightstripBrightness);
     preferences.putUChar("ls_warmth", lightstripWarmth);
@@ -596,6 +667,9 @@ void load_lightstrip_state_preferences() {
     lightstripBrightness = preferences.getUChar("ls_bright", lightstripBrightness);
     lightstripWarmth = preferences.getUChar("ls_warmth", lightstripWarmth);
     lightstripOn = preferences.getBool("ls_on", lightstripOn);
+    deskLightBrightness = preferences.getUChar("dl_bright", deskLightBrightness);
+    deskLightWarmth = preferences.getUChar("dl_warmth", deskLightWarmth);
+    deskLightOn = preferences.getBool("dl_on", deskLightOn);
     deskHeightCm = preferences.getUChar("desk_cm", deskHeightCm);
 }
 
@@ -984,6 +1058,9 @@ void start_web_gui() {
     server.on("/api/nas/storage", HTTP_GET, send_nas_storage_http);
     server.on("/api/desk/state", HTTP_GET, send_desk_state_http);
     server.on("/api/desk/height", HTTP_POST, handle_desk_height);
+    server.on("/api/desklight/state", HTTP_GET, send_desk_light_state_http);
+    server.on("/api/desklight/brightness", HTTP_POST, handle_desk_light_brightness);
+    server.on("/api/desklight/temperature", HTTP_POST, handle_desk_light_temperature);
     server.on("/api/config", HTTP_GET, send_http_config);
     server.on("/api/config", HTTP_POST, save_http_config);
     server.on("/api/remap", HTTP_POST, send_http_remap);
